@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout — Vendhan Crackers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <img src="public/assets/LS20260821220421.png" alt="Vendhan Fireworks" class="logo-img">
+        <span class="logo-tagline">Celebrate Brighter.</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="shop.html">Shop</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="icon-btn" title="Search"><i class="fas fa-search"></i></button>
+        <a href="cart.html" class="icon-btn" title="Cart">
+          <i class="fas fa-shopping-cart"></i>
+          <span class="cart-count">0</span>
+        </a>
+        <a href="login.html" class="nav-login"><i class="fas fa-user"></i> Login</a>
+        <button class="hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-menu">
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+      <a href="login.html" class="nav-login"><i class="fas fa-user"></i> Login</a>
+    </div>
+  </nav>
+
+  <!-- ============ PAGE HEADER ============ -->
+  <section class="page-header">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html">Home</a>
+        <i class="fas fa-chevron-right"></i>
+        <a href="cart.html">Cart</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Checkout</span>
+      </div>
+      <h1>Checkout</h1>
+      <p>Complete your order in just a few simple steps.</p>
+    </div>
+  </section>
+
+  <!-- ============ CHECKOUT ============ -->
+  <div class="container">
+    <div class="checkout-layout">
+
+      <!-- LEFT: FORM -->
+      <div>
+        <!-- Steps -->
+        <div class="steps">
+          <div class="step active">
+            <div class="step-num">1</div>
+            <span class="step-label">Details</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <span class="step-label">Delivery</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <span class="step-label">Review</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <span class="step-label">Confirm</span>
+          </div>
+        </div>
+
+        <form id="checkout-form" data-validate data-no-generic>
+
+          <!-- STEP 1: CUSTOMER DETAILS -->
+          <div class="checkout-step-panel">
+            <div class="form-card">
+              <h3><i class="fas fa-user"></i> Customer Details</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Full Name <span>*</span></label>
+                  <input type="text" class="form-control" placeholder="e.g. Ramesh Kumar" required>
+                  <span class="form-error">Please enter your full name</span>
+                </div>
+                <div class="form-group">
+                  <label>Phone Number <span>*</span></label>
+                  <input type="tel" class="form-control" placeholder="e.g. 98400 12345" required>
+                  <span class="form-error">Please enter your phone number</span>
+                </div>
+                <div class="form-group full">
+                  <label>Email Address <span>*</span></label>
+                  <input type="email" class="form-control" placeholder="e.g. ramesh@example.com" required>
+                  <span class="form-error">Please enter a valid email</span>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary btn-lg" data-next-step>
+              Continue to Delivery <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+
+          <!-- STEP 2: DELIVERY DETAILS -->
+          <div class="checkout-step-panel" style="display:none;">
+            <div class="form-card">
+              <h3><i class="fas fa-truck"></i> Delivery Details</h3>
+              <div class="form-grid">
+                <div class="form-group full">
+                  <label>Address <span>*</span></label>
+                  <textarea class="form-control" rows="3" placeholder="House no, Street, Area" required></textarea>
+                  <span class="form-error">Please enter your delivery address</span>
+                </div>
+                <div class="form-group">
+                  <label>City <span>*</span></label>
+                  <input type="text" class="form-control" placeholder="e.g. Chennai" required>
+                  <span class="form-error">Please enter your city</span>
+                </div>
+                <div class="form-group">
+                  <label>State <span>*</span></label>
+                  <select class="form-control" required>
+                    <option value="">Select State</option>
+                    <option>Tamil Nadu</option>
+                    <option>Kerala</option>
+                    <option>Karnataka</option>
+                    <option>Andhra Pradesh</option>
+                    <option>Telangana</option>
+                    <option>Puducherry</option>
+                    <option>Other</option>
+                  </select>
+                  <span class="form-error">Please select your state</span>
+                </div>
+                <div class="form-group">
+                  <label>Pincode <span>*</span></label>
+                  <input type="text" class="form-control" placeholder="e.g. 600001" maxlength="6" required>
+                  <span class="form-error">Please enter a valid pincode</span>
+                </div>
+                <div class="form-group">
+                  <label>Delivery Instructions (Optional)</label>
+                  <input type="text" class="form-control" placeholder="e.g. Call before delivery">
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline-dark btn-lg" data-prev-step>
+                <i class="fas fa-arrow-left"></i> Back
+              </button>
+              <button type="button" class="btn btn-primary btn-lg" data-next-step>
+                Continue to Review <i class="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 3: ORDER REVIEW -->
+          <div class="checkout-step-panel" style="display:none;">
+            <div class="form-card">
+              <h3><i class="fas fa-clipboard-check"></i> Order Review</h3>
+              <div class="confirm-products">
+                <p style="color:var(--text-muted);">Loading cart items...</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline-dark btn-lg" data-prev-step>
+                <i class="fas fa-arrow-left"></i> Back
+              </button>
+              <button type="button" class="btn btn-primary btn-lg" data-place-order>
+                <i class="fas fa-check-circle"></i> Place Order
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 4: CONFIRMATION (handled by redirect) -->
+          <div class="checkout-step-panel" style="display:none;">
+            <div class="form-card text-center">
+              <div class="success-icon"><i class="fas fa-check"></i></div>
+              <h3>Order Placed Successfully!</h3>
+              <p style="color:var(--text-muted);">Redirecting to confirmation page...</p>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- RIGHT: ORDER SUMMARY -->
+      <aside class="order-summary">
+        <h3>Order Summary</h3>
+        <div class="confirm-products" style="margin-bottom:16px;">
+          <p style="color:var(--text-muted);">Loading cart items...</p>
+        </div>
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span>₹0</span>
+        </div>
+        <div class="summary-row">
+          <span>Discount</span>
+          <span class="discount">− ₹0</span>
+        </div>
+        <div class="summary-row" style="display:none;">
+          <span>Referral Discount</span>
+          <span class="discount">− ₹0</span>
+        </div>
+        <div class="summary-row">
+          <span>Delivery Charge</span>
+          <span>₹0</span>
+        </div>
+        <div class="summary-row total">
+          <span>Grand Total</span>
+          <span>₹0</span>
+        </div>
+
+        <!-- Minimum Order — dynamically resolved from the logged-in customer's type
+             by js/pages.js (value comes from the backend API) -->
+        <div class="min-order-row" data-min-order-row style="display:none;">
+          <span>Minimum Order:</span>
+          <span data-min-order-value>₹0</span>
+        </div>
+        <div class="min-order-note" data-min-order-note style="display:none;"></div>
+
+        <p style="font-size:0.72rem; color:var(--text-muted); text-align:center; margin-top:10px;">
+          <i class="fas fa-check-circle" style="color:#16a34a;"></i> Inclusive of all taxes
+        </p>
+        <p style="font-size:0.7rem; color:var(--text-muted); text-align:center; margin-top:12px;">
+          <i class="fas fa-shield-alt"></i> Secure checkout · 100% Safe & Secure
+        </p>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="index.html" class="logo">
+            <div class="logo-icon"><i class="fas fa-fire"></i></div>
+            <div class="logo-text"><span data-shop-name>Vendhan Crackers</span><small>Celebrate Together</small></div>
+          </a>
+          <p class="footer-desc">Celebrate Brighter. Celebrate Together. Premium quality crackers trusted by families across Tamil Nadu since <span data-footer-since-year></span>.</p>
+          <div class="social-links">
+            <a href="#" data-shop-facebook aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" data-shop-instagram aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="#" data-shop-twitter aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            <a href="#" data-shop-whatsapp aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+          </div>
+        </div>
+        <div>
+          <h4>Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="shop.html">Shop</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="orders.html">My Orders</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Categories</h4>
+          <ul class="footer-links">
+            <li><a href="shop.html">Sparklers</a></li>
+            <li><a href="shop.html">Flower Pots</a></li>
+            <li><a href="shop.html">Rockets</a></li>
+            <li><a href="shop.html">Ground Chakkars</a></li>
+            <li><a href="shop.html">Fancy Crackers</a></li>
+            <li><a href="shop.html">Gift Boxes</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contact Info</h4>
+          <ul class="footer-contact">
+            <li><i class="fas fa-map-marker-alt"></i> <span data-shop-address>42, Festival Street, Near Old Bus Stand, Chennai — 600001</span></li>
+            <li><i class="fas fa-phone-alt"></i> <span data-shop-phone>+91 98400 12345</span></li>
+            <li><i class="fas fa-envelope"></i> <span data-shop-email>hello@vendhancrackers.in</span></li>
+            <li><i class="fas fa-clock"></i> <span data-shop-hours-monsat>Mon–Sat: 9 AM – 9 PM</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        © 2026 <span data-shop-name>Vendhan Crackers</span>. All rights reserved. | Celebrate Brighter. Celebrate Together. | ™ Trademark of <span data-shop-company>Vendhan Enterprises</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pages.js"></script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login — Vendhan Crackers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="admin-body">
+
+  <!-- ============ ADMIN AUTH ============ -->
+  <div class="auth-wrap">
+    <div class="auth-visual">
+      <div class="firework"></div>
+      <div class="firework"></div>
+      <div class="firework"></div>
+      <div class="av-content">
+        <a href="index.html" class="logo" style="margin-bottom:var(--space-6);">
+          <img src="public/assets/LS20260821220421.png" alt="Vendhan Fireworks" class="logo-img">
+        </a>
+        <h2>Admin Control<br>Center</h2>
+        <p>Manage products, orders, inventory and sales reports for Vendhan Crackers.</p>
+        <ul class="av-points">
+          <li><i class="fas fa-check-circle"></i> Product & category management</li>
+          <li><i class="fas fa-check-circle"></i> Order & inventory control</li>
+          <li><i class="fas fa-check-circle"></i> Real-time sales dashboard</li>
+          <li><i class="fas fa-check-circle"></i> Low stock alerts & reports</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="auth-form-side">
+      <div class="auth-card">
+        <h1>Admin Login</h1>
+        <p>Enter your admin credentials to access the dashboard.</p>
+
+        <form data-validate data-no-generic>
+          <div class="form-group">
+            <label>Admin Email <span>*</span></label>
+            <div class="input-icon">
+              <i class="fas fa-envelope"></i>
+              <input type="email" class="form-control" placeholder="admin@vendhancrackers.in" required>
+            </div>
+            <span class="form-error">Please enter your admin email</span>
+          </div>
+
+          <div class="form-group">
+            <label>Password <span>*</span></label>
+            <div class="input-icon">
+              <i class="fas fa-lock"></i>
+              <input type="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <span class="form-error">Please enter your password</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg btn-block">
+            <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+          </button>
+        </form>
+
+        <div class="auth-switch">
+          <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Website</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pages.js"></script>
+</body>
+</html>

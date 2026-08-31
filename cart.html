@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Cart — Vendhan Crackers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <img src="public/assets/LS20260821220421.png" alt="Vendhan Fireworks" class="logo-img">
+        <span class="logo-tagline">Celebrate Brighter.</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="shop.html">Shop</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="icon-btn" title="Search"><i class="fas fa-search"></i></button>
+        <a href="cart.html" class="icon-btn" title="Cart">
+          <i class="fas fa-shopping-cart"></i>
+          <span class="cart-count">0</span>
+        </a>
+        <a href="login.html" class="nav-login"><i class="fas fa-user"></i> Login</a>
+        <button class="hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-menu">
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+      <a href="login.html" class="nav-login"><i class="fas fa-user"></i> Login</a>
+    </div>
+  </nav>
+
+  <!-- ============ PAGE HEADER ============ -->
+  <section class="page-header">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html">Home</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Cart</span>
+      </div>
+      <h1>Your Cart</h1>
+      <p>Review the items in your cart before proceeding to checkout.</p>
+    </div>
+  </section>
+
+  <!-- ============ CART ============ -->
+  <div class="container">
+    <div class="cart-layout">
+
+      <!-- CART ITEMS -->
+      <div>
+        <div class="cart-items">
+          <!-- Items rendered by JS -->
+        </div>
+
+        <div style="margin-top: var(--space-5);">
+          <a href="shop.html" class="btn btn-outline-dark"><i class="fas fa-arrow-left"></i> Continue Shopping</a>
+        </div>
+      </div>
+
+      <!-- ORDER SUMMARY -->
+      <aside class="order-summary">
+        <h3>Order Summary</h3>
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span data-summary-subtotal>₹0</span>
+        </div>
+        <div class="summary-row">
+          <span data-summary-discount-label>Discount</span>
+          <span class="discount" data-summary-discount>− ₹0</span>
+        </div>
+        <div class="summary-row referral-row" style="display:none;">
+          <span data-summary-referral-label>Referral Discount</span>
+          <span class="discount" data-summary-referral>− ₹0</span>
+        </div>
+        <div class="summary-row">
+          <span>Delivery Charge</span>
+          <span data-summary-delivery>₹0</span>
+        </div>
+        <div class="summary-row total">
+          <span>Grand Total</span>
+          <span data-summary-total>₹0</span>
+        </div>
+        <p style="font-size:0.72rem; color:var(--text-muted); text-align:center; margin-top:10px;">
+          <i class="fas fa-check-circle" style="color:#16a34a;"></i> Inclusive of all taxes
+        </p>
+
+        <!-- Minimum Order — value comes dynamically from Admin Settings (single source of truth) -->
+        <div class="min-order-row" data-min-order-row style="display:none;">
+          <span>Minimum Order:</span>
+          <span data-min-order-value>₹0</span>
+        </div>
+        <div class="min-order-note" data-min-order-note style="display:none;"></div>
+        <!-- Phase 8: Reseller Referral Code Entry -->
+        <div class="referral-entry" style="margin-top:14px; padding:12px; background:var(--bg-light); border-radius:var(--radius);">
+          <div style="font-size:0.82rem; font-weight:600; color:var(--text-dark); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <i class="fas fa-user-tag" style="color:var(--primary);"></i> Reseller Referral Code
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" data-referral-input placeholder="Enter code" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:0.85rem; text-transform:uppercase;">
+            <button type="button" class="btn btn-dark btn-sm" data-referral-apply style="white-space:nowrap;"><i class="fas fa-check"></i> Apply</button>
+          </div>
+          <div data-referral-status style="font-size:0.78rem; margin-top:8px; color:var(--text-muted);"></div>
+        </div>
+        <div class="summary-actions">
+          <a href="checkout.html" class="btn btn-primary btn-lg"><i class="fas fa-lock"></i> Proceed to Checkout</a>
+        </div>
+        <p style="font-size:0.7rem; color:var(--text-muted); text-align:center; margin-top:12px;">
+          <i class="fas fa-shield-alt"></i> Secure checkout · 100% Safe & Secure
+        </p>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="index.html" class="logo">
+            <div class="logo-icon"><i class="fas fa-fire"></i></div>
+            <div class="logo-text"><span data-shop-name>Vendhan Crackers</span><small>Celebrate Together</small></div>
+          </a>
+          <p class="footer-desc">Celebrate Brighter. Celebrate Together. Premium quality crackers trusted by families across Tamil Nadu since <span data-footer-since-year></span>.</p>
+          <div class="social-links">
+            <a href="#" data-shop-facebook aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" data-shop-instagram aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="#" data-shop-twitter aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            <a href="#" data-shop-whatsapp aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+          </div>
+        </div>
+        <div>
+          <h4>Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="shop.html">Shop</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="orders.html">My Orders</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Categories</h4>
+          <ul class="footer-links">
+            <li><a href="shop.html">Sparklers</a></li>
+            <li><a href="shop.html">Flower Pots</a></li>
+            <li><a href="shop.html">Rockets</a></li>
+            <li><a href="shop.html">Ground Chakkars</a></li>
+            <li><a href="shop.html">Fancy Crackers</a></li>
+            <li><a href="shop.html">Gift Boxes</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contact Info</h4>
+          <ul class="footer-contact">
+            <li><i class="fas fa-map-marker-alt"></i> <span data-shop-address>42, Festival Street, Near Old Bus Stand, Chennai — 600001</span></li>
+            <li><i class="fas fa-phone-alt"></i> <span data-shop-phone>+91 98400 12345</span></li>
+            <li><i class="fas fa-envelope"></i> <span data-shop-email>hello@vendhancrackers.in</span></li>
+            <li><i class="fas fa-clock"></i> <span data-shop-hours-monsat>Mon–Sat: 9 AM – 9 PM</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        © 2026 <span data-shop-name>Vendhan Crackers</span>. All rights reserved. | Celebrate Brighter. Celebrate Together. | ™ Trademark of <span data-shop-company>Vendhan Enterprises</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pages.js"></script>
+</body>
+</html>

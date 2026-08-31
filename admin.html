@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Vendhan Crackers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="admin-sidebar">
+      <a href="index.html" class="logo">
+        <img src="public/assets/LS20260821220421.png" alt="Vendhan Fireworks" class="logo-img">
+      </a>
+      <div class="admin-logo-tagline">Celebrate Brighter.</div>
+      <nav class="admin-nav">
+        <div class="nav-section">Main</div>
+        <a href="#" class="active" data-admin-section="dashboard"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="#" data-admin-section="products"><i class="fas fa-box-open"></i> Products</a>
+        <a href="#" data-admin-section="categories"><i class="fas fa-tags"></i> Categories</a>
+        <a href="#" data-admin-section="orders"><i class="fas fa-shopping-cart"></i> Orders</a>
+        <a href="#" data-admin-section="customers"><i class="fas fa-users"></i> Customers</a>
+        <a href="#" data-admin-section="resellers"><i class="fas fa-user-tag"></i> Resellers</a>
+        <a href="#" data-admin-section="commissions"><i class="fas fa-file-invoice-dollar"></i> Commissions</a>
+        <a href="#" data-admin-section="inventory"><i class="fas fa-warehouse"></i> Inventory</a>
+        <div class="nav-section">Insights</div>
+        <a href="#" data-admin-section="reports"><i class="fas fa-chart-line"></i> Sales Reports</a>
+        <a href="#" data-admin-section="reviews"><i class="fas fa-star"></i> Reviews</a>
+        <a href="#" data-admin-section="contact"><i class="fas fa-envelope"></i> Contact Messages</a>
+        <a href="#" data-admin-section="combos"><i class="fas fa-fire"></i> Combos</a>
+        <a href="#" data-admin-section="contact-details"><i class="fas fa-address-book"></i> Contact Details</a>
+        <a href="#" data-admin-section="settings"><i class="fas fa-cog"></i> Settings</a>
+        <a href="#" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+      </nav>
+    </aside>
+
+    <!-- ============ MAIN ============ -->
+    <main class="admin-main">
+
+      <!-- Topbar -->
+      <div class="admin-topbar">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button class="hamburger admin-hamburger" aria-label="Menu">
+            <span></span><span></span><span></span>
+          </button>
+          <h2 id="admin-page-title">Dashboard</h2>
+        </div>
+        <div class="at-right">
+          <button class="icon-btn" style="color:var(--text-dark);" title="Notifications">
+            <i class="fas fa-bell"></i>
+          </button>
+          <div class="admin-avatar">
+            <div class="avatar">VK</div>
+            <div>
+              <b style="font-size:0.85rem; display:block;">Vendhan Kumar</b>
+              <span style="font-size:0.7rem; color:var(--text-muted);">Admin</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ DASHBOARD SECTION ============ -->
+      <div class="admin-section" id="admin-dashboard">
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon gold"><i class="fas fa-rupee-sign"></i></div>
+            <div>
+              <b>₹0</b>
+              <span>Total Sales</span>
+              <div class="kpi-trend"><i class="fas fa-arrow-up"></i> Live data</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon blue"><i class="fas fa-shopping-cart"></i></div>
+            <div>
+              <b>0</b>
+              <span>Total Orders</span>
+              <div class="kpi-trend"><i class="fas fa-arrow-up"></i> Live data</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon green"><i class="fas fa-box-open"></i></div>
+            <div>
+              <b>0</b>
+              <span>Total Products</span>
+              <div class="kpi-trend"><i class="fas fa-arrow-up"></i> Live data</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon purple"><i class="fas fa-users"></i></div>
+            <div>
+              <b>0</b>
+              <span>Total Customers</span>
+              <div class="kpi-trend"><i class="fas fa-arrow-up"></i> Live data</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="admin-grid">
+          <div class="admin-card">
+            <h3>Sales Overview <a href="#" class="card-link" data-admin-section="reports">View Report <i class="fas fa-arrow-right"></i></a></h3>
+            <div class="chart-box">
+              <div class="bar" style="height:5%;"><span class="bar-label">Loading...</span></div>
+            </div>
+          </div>
+          <div class="admin-card">
+            <h3>Orders by Status</h3>
+            <div class="donut-wrap">
+              <div class="donut" style="background: conic-gradient(#16a34a 0% 100%);">
+                <div class="donut-center">
+                  <b>0</b>
+                  <span>Total Orders</span>
+                </div>
+              </div>
+              <div class="legend">
+                <div class="legend-item"><span class="legend-dot" style="background:#16a34a;"></span> Loading...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-grid">
+          <!-- Recent Orders -->
+          <div class="admin-card">
+            <h3>Recent Orders <a href="#" class="card-link" data-admin-section="orders">View All <i class="fas fa-arrow-right"></i></a></h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Loading orders...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Low Stock -->
+          <div class="admin-card" id="low-stock-card">
+            <h3>Low Stock Alerts <a href="#" class="card-link" data-admin-section="inventory">Manage <i class="fas fa-arrow-right"></i></a></h3>
+            <div class="low-stock-item">
+              <img src="" alt="">
+              <div class="ls-info">
+                <b>Loading...</b>
+                <span>Fetching stock data</span>
+              </div>
+              <span class="stock-pill stock-low">Low</span>
+            </div>
+            <div class="low-stock-item">
+              <img src="" alt="">
+              <div class="ls-info">
+                <b>Loading...</b>
+                <span>Fetching stock data</span>
+              </div>
+              <span class="stock-pill stock-low">Low</span>
+            </div>
+            <div class="low-stock-item">
+              <img src="" alt="">
+              <div class="ls-info">
+                <b>Loading...</b>
+                <span>Fetching stock data</span>
+              </div>
+              <span class="stock-pill stock-low">Low</span>
+            </div>
+            <div class="low-stock-item">
+              <img src="" alt="">
+              <div class="ls-info">
+                <b>Loading...</b>
+                <span>Fetching stock data</span>
+              </div>
+              <span class="stock-pill stock-low">Low</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Selling + Category Sales -->
+        <div class="admin-grid">
+          <div class="admin-card">
+            <h3>Top-Selling Products</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Units Sold</th>
+                    <th>Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="admin-card">
+            <h3>Category-wise Sales</h3>
+            <div class="donut-wrap">
+              <div class="donut" style="background: conic-gradient(#f5b301 0% 100%);">
+                <div class="donut-center">
+                  <b>₹0</b>
+                  <span>Total Sales</span>
+                </div>
+              </div>
+              <div class="legend">
+                <div class="legend-item"><span class="legend-dot" style="background:#f5b301;"></span> Loading...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ PRODUCTS SECTION ============ -->
+      <div class="admin-section" id="admin-products" style="display:none;">
+        <div class="admin-card">
+          <h3>
+            All Products
+            <button class="btn btn-primary btn-sm" data-modal-open="#product-modal"><i class="fas fa-plus"></i> Add Product</button>
+          </h3>
+          <div style="margin-bottom:12px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <input type="text" id="product-search" class="form-control" placeholder="Search products by name..." style="max-width:320px;">
+<select id="product-category-filter" class="form-control" style="max-width:190px;">
+              <option value="">All Categories</option>
+            </select>
+            <select id="product-status-filter" class="form-control" style="max-width:160px;">
+              <option value="all">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Stock</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Loading products...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ CATEGORIES SECTION ============ -->
+      <div class="admin-section" id="admin-categories" style="display:none;">
+        <div class="admin-card">
+          <h3>
+            Categories
+            <button class="btn btn-primary btn-sm" data-modal-open="#category-modal"><i class="fas fa-plus"></i> Add Category</button>
+          </h3>
+          <div style="margin-bottom:12px;">
+            <input type="text" id="category-search" class="form-control" placeholder="Search categories..." style="max-width:320px;">
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Products</th>
+                  <th>Discount</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Loading categories...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ ORDERS SECTION ============ -->
+      <div class="admin-section" id="admin-orders" style="display:none;">
+        <div class="admin-card">
+          <h3>Order Management</h3>
+          <div class="admin-tabs">
+            <button class="admin-tab active">All</button>
+            <button class="admin-tab">Pending</button>
+            <button class="admin-tab">Confirmed</button>
+            <button class="admin-tab">Packed</button>
+            <button class="admin-tab">Delivered</button>
+            <button class="admin-tab">Cancelled</button>
+          </div>
+          <div style="margin-bottom:12px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <select id="order-month-filter" class="form-control" style="max-width:160px;">
+              <option value="">All Months</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+            <select id="order-year-filter" class="form-control" style="max-width:120px;">
+              <option value="">All Years</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" id="order-filter-clear"><i class="fas fa-times"></i> Clear</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Date</th>
+                  <th>Items</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Update Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Loading orders...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ CUSTOMERS SECTION ============ -->
+      <div class="admin-section" id="admin-customers" style="display:none;">
+        <div class="admin-card">
+          <h3>Customers</h3>
+          <div class="admin-tabs" id="customer-type-tabs">
+            <button class="admin-tab active" data-customer-type="">All Customers</button>
+            <button class="admin-tab" data-customer-type="retail">Retail Customers</button>
+            <button class="admin-tab" data-customer-type="wholesale">Wholesale Customers</button>
+          </div>
+          <div style="margin-bottom:12px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <input type="text" id="customer-search" class="form-control" placeholder="Search by name, email or phone..." style="max-width:320px;">
+            <select id="customer-status-filter" class="form-control" style="max-width:140px;">
+              <option value="all">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Customer Type</th>
+                  <th>Orders</th>
+                  <th>Total Spent</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Loading customers...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ RESELLERS SECTION (Phase 8) ============ -->
+      <div class="admin-section" id="admin-resellers" style="display:none;">
+        <div class="admin-card">
+          <h3>
+            Reseller Management
+            <button class="btn btn-primary btn-sm" id="reseller-add-open"><i class="fas fa-user-plus"></i> Add Reseller</button>
+          </h3>
+
+          <!-- Summary KPI cards -->
+          <div class="kpi-grid" id="reseller-summary-cards" style="margin-bottom:16px;">
+            <div class="kpi-card"><div class="kpi-icon gold"><i class="fas fa-user-tag"></i></div><div><b id="summary-total-resellers">0</b><span>Total Resellers</span></div></div>
+            <div class="kpi-card"><div class="kpi-icon green"><i class="fas fa-user-check"></i></div><div><b id="summary-active-resellers">0</b><span>Active Resellers</span></div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><i class="fas fa-users"></i></div><div><b id="summary-referred-customers">0</b><span>Referred Customers</span></div></div>
+            <div class="kpi-card"><div class="kpi-icon purple"><i class="fas fa-rupee-sign"></i></div><div><b id="summary-earned">₹0</b><span>Earned Commission</span></div></div>
+          </div>
+
+          <div style="margin-bottom:12px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <input type="text" id="reseller-search" class="form-control" placeholder="Search by name, email, phone or referral code..." style="max-width:320px;">
+            <select id="reseller-status-filter" class="form-control" style="max-width:140px;">
+              <option value="all">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Reseller</th>
+                  <th>Referral Code</th>
+                  <th>Referred Customers</th>
+                  <th>Earned Commission</th>
+                  <th>Pending Commission</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Loading resellers...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ ADD / ACTIVATE RESELLER MODAL ============ -->
+      <div class="modal-overlay" id="reseller-add-modal">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Add / Activate Reseller</h3>
+            <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+          </div>
+          <div id="ar-add-body">
+            <div style="color:var(--text-muted); font-size:0.82rem; margin-bottom:12px;">
+              Activate an existing customer as a reseller. The referral code and commission rate are generated and managed by the backend.
+            </div>
+            <div class="form-group">
+              <label>Select Customer <span>*</span></label>
+              <input type="text" id="reseller-customer-search" class="form-control" placeholder="Search customer by name, email or phone...">
+              <div id="reseller-customer-list" class="reseller-customer-list"><div style="padding:8px 12px; color:var(--text-muted); font-size:0.8rem;">Type to search customers...</div></div>
+              <span id="reseller-customer-empty" style="display:none; font-size:0.8rem; color:var(--text-muted);">No eligible customers found.</span>
+            </div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Referral Code</label>
+                <input type="text" id="reseller-ref-code" class="form-control" readonly value="Auto-generated on activation">
+              </div>
+              <div class="form-group">
+                <label>Commission Rate (%)</label>
+                <input type="text" id="reseller-commission-rate" class="form-control" readonly>
+              </div>
+            </div>
+            <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-ghost" data-modal-close>Cancel</button>
+              <button class="btn btn-primary" id="reseller-activate-btn"><i class="fas fa-user-check"></i> Activate Reseller</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ RESELLER DETAILS MODAL ============ -->
+      <div class="modal-overlay" id="reseller-view-modal">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Reseller Details</h3>
+            <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+          </div>
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
+            <div class="avatar" id="rv-avatar" style="width:44px;height:44px;"></div>
+            <div style="flex:1; min-width:180px;">
+              <b id="rv-name" style="font-size:1rem;"></b>
+              <div style="font-size:0.82rem; color:var(--text-muted);"><span id="rv-email"></span><br><span id="rv-phone"></span></div>
+            </div>
+            <span class="stock-pill" id="rv-status"></span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; font-size:0.85rem;">
+            <div><span style="color:var(--text-muted);">Referral Code</span><br><b id="rv-code" style="letter-spacing:0.05em;"></b></div>
+            <div><span style="color:var(--text-muted);">Commission Rate</span><br><b id="rv-rate"></b></div>
+            <div><span style="color:var(--text-muted);">Activated On</span><br><b id="rv-joined"></b></div>
+            <div><span style="color:var(--text-muted);">Referred Customers</span><br><b id="rv-referred"></b></div>
+            <div><span style="color:var(--text-muted);">Earned Commission</span><br><b id="rv-earned"></b></div>
+            <div><span style="color:var(--text-muted);">Pending Commission</span><br><b id="rv-pending"></b></div>
+          </div>
+          <div style="margin-top:16px; text-align:right;">
+            <button class="btn btn-ghost" data-modal-close>Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ COMMISSIONS SECTION (Phase 8) ============ -->
+      <div class="admin-section" id="admin-commissions" style="display:none;">
+        <div class="admin-card">
+          <h3>Commission Records</h3>
+          <div style="margin-bottom:12px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <select id="commission-status-filter" class="form-control" style="max-width:160px;">
+              <option value="all">All</option>
+              <option value="earned">Earned</option>
+              <option value="pending">Pending</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Reseller</th>
+                  <th>Customer</th>
+                  <th>Base Amount</th>
+                  <th>%</th>
+                  <th>Commission</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Loading commissions...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ INVENTORY SECTION ============ -->
+      <div class="admin-section" id="admin-inventory" style="display:none;">
+        <div class="admin-card">
+          <h3>Inventory Management</h3>
+          <div style="margin-bottom:12px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <select id="inventory-category-filter" class="form-control" style="max-width:220px;">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Current Stock</th>
+                  <th>Stock Status</th>
+                  <th>Reorder Level</th>
+                  <th>Last Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Loading inventory...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ REPORTS SECTION (Phase 9 Sales Analytics) ============ -->
+      <div class="admin-section" id="admin-reports" style="display:none;">
+        <div class="admin-card">
+          <h3>Sales Analytics Dashboard</h3>
+          <div class="report-filter-bar">
+            <div class="report-filter-group">
+              <label for="report-period">Period</label>
+              <select id="report-period" class="form-control">
+                <option value="this_month">This Month</option>
+                <option value="last_month">Last Month</option>
+                <option value="last_3_months">Last 3 Months</option>
+                <option value="last_6_months">Last 6 Months</option>
+                <option value="this_year">This Year</option>
+                <option value="last_year">Last Year</option>
+                <option value="all">All Time</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+            <div class="report-filter-group report-date-range" id="report-date-range" style="display:none;">
+              <label for="report-from">From</label>
+              <input type="date" id="report-from" class="form-control" title="From Date">
+              <label for="report-to">To</label>
+              <input type="date" id="report-to" class="form-control" title="To Date">
+            </div>
+            <div class="report-filter-group">
+              <label for="report-year">Year</label>
+              <select id="report-year" class="form-control">
+                <option value="">All Years</option>
+              </select>
+            </div>
+            <div class="report-filter-group">
+              <label for="report-category">Category</label>
+              <select id="report-category" class="form-control">
+                <option value="">All Categories</option>
+              </select>
+            </div>
+            <div class="report-filter-group">
+              <label for="report-customer-type">Customer Type</label>
+              <select id="report-customer-type" class="form-control">
+                <option value="">All Types</option>
+                <option value="retail">Retail</option>
+                <option value="wholesale">Wholesale</option>
+              </select>
+            </div>
+            <div class="report-filter-group">
+              <label for="report-status">Order Status</label>
+              <select id="report-status" class="form-control">
+                <option value="">All Statuses</option>
+              </select>
+            </div>
+            <div class="report-filter-actions">
+              <button class="btn btn-primary btn-sm" id="report-apply"><i class="fas fa-filter"></i> Apply</button>
+              <button class="btn btn-ghost btn-sm" id="report-reset"><i class="fas fa-times"></i> Reset</button>
+              <button class="btn btn-primary btn-sm" id="report-download-csv"><i class="fas fa-file-csv"></i> CSV</button>
+              <button class="btn btn-primary btn-sm" id="report-download-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
+            </div>
+          </div>
+          <div id="report-loading" style="display:none; text-align:center; padding:20px;">
+            <i class="fas fa-spinner fa-spin" style="font-size:2rem; color:var(--text-muted);"></i>
+            <p style="color:var(--text-muted);">Loading report data...</p>
+          </div>
+          <div id="report-error" style="display:none; text-align:center; padding:20px; color:var(--danger);">
+            <i class="fas fa-exclamation-triangle" style="font-size:2rem;"></i>
+            <p id="report-error-msg">Unable to load report data.</p>
+          </div>
+          <div id="report-content">
+            <!-- KPI Cards -->
+            <div class="kpi-grid report-kpi-grid" id="report-kpis">
+              <div class="kpi-card"><div class="kpi-icon gold"><i class="fas fa-rupee-sign"></i></div><div><b>₹0</b><span>Total Sales</span></div></div>
+              <div class="kpi-card"><div class="kpi-icon blue"><i class="fas fa-shopping-cart"></i></div><div><b>0</b><span>Total Orders</span></div></div>
+              <div class="kpi-card"><div class="kpi-icon green"><i class="fas fa-box-open"></i></div><div><b>0</b><span>Products Sold</span></div></div>
+              <div class="kpi-card"><div class="kpi-icon purple"><i class="fas fa-chart-line"></i></div><div><b>₹0</b><span>Avg Order Value</span></div></div>
+              <div class="kpi-card"><div class="kpi-icon orange"><i class="fas fa-percent"></i></div><div><b>₹0</b><span>Total Discounts</span></div></div>
+              <div class="kpi-card"><div class="kpi-icon teal"><i class="fas fa-wallet"></i></div><div><b>₹0</b><span>Net Sales</span></div></div>
+            </div>
+
+            <!-- Monthly Sales Chart -->
+            <div class="admin-grid">
+              <div class="admin-card">
+                <h3>Monthly Sales</h3>
+                <div class="chart-box report-chart-box" id="report-monthly-chart" style="height:250px;">
+                  <div class="bar" style="height:5%;"><span class="bar-label">Loading...</span></div>
+                </div>
+              </div>
+              <div class="admin-card">
+                <h3>Order Status Summary</h3>
+                <div class="table-wrap">
+                  <table class="data-table" id="report-status-table">
+                    <thead><tr><th>Status</th><th>Count</th></tr></thead>
+                    <tbody><tr><td colspan="2" style="text-align:center; color:var(--text-muted);">Loading...</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Category + Retail/Wholesale -->
+            <div class="admin-grid">
+              <div class="admin-card">
+                <h3>Sales by Category</h3>
+                <div class="table-wrap">
+                  <table class="data-table" id="report-category-table">
+                    <thead><tr><th>Category</th><th>Products Sold</th><th>Orders</th><th>Sales</th><th>Discount</th></tr></thead>
+                    <tbody><tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Loading...</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="admin-card">
+                <h3>Retail vs Wholesale</h3>
+                <div class="table-wrap">
+                  <table class="data-table" id="report-rw-table">
+                    <thead><tr><th>Type</th><th>Orders</th><th>Products</th><th>Sales</th><th>Discounts</th></tr></thead>
+                    <tbody><tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Loading...</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top Products + Discount Analysis -->
+            <div class="admin-grid">
+              <div class="admin-card">
+                <h3>Top Selling Products</h3>
+                <div class="table-wrap">
+                  <table class="data-table" id="report-top-products-table">
+                    <thead><tr><th>Rank</th><th>Product</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
+                    <tbody><tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Loading...</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="admin-card">
+                <h3>Discount Analysis</h3>
+                <div class="table-wrap">
+                  <table class="data-table" id="report-discount-table">
+                    <thead><tr><th>Discount Type</th><th>Amount</th></tr></thead>
+                    <tbody><tr><td colspan="2" style="text-align:center; color:var(--text-muted);">Loading...</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reseller/Referral Performance -->
+            <div class="admin-card">
+              <h3>Reseller / Referral Performance</h3>
+              <div class="table-wrap">
+                <table class="data-table" id="report-reseller-table">
+                  <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+                  <tbody><tr><td colspan="2" style="text-align:center; color:var(--text-muted);">Loading...</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ REVIEWS SECTION ============ -->
+      <div class="admin-section" id="admin-reviews" style="display:none;">
+        <div class="admin-card">
+          <h3>Customer Reviews</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Product</th>
+                  <th>Rating</th>
+                  <th>Review</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Loading reviews...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ CONTACT MESSAGES SECTION ============ -->
+      <div class="admin-section" id="admin-contact" style="display:none;">
+        <div class="admin-card">
+          <h3>Contact Messages</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Subject</th>
+                  <th>Message</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Loading messages...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ COMBOS SECTION ============ -->
+      <div class="admin-section" id="admin-combos" style="display:none;">
+        <div class="admin-card">
+          <h3>Festival Combos
+            <button class="btn btn-primary btn-sm" id="combo-add-btn"><i class="fas fa-plus"></i> Add Combo</button>
+          </h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Combo Name</th>
+                  <th>Price</th>
+                  <th>Discount</th>
+                  <th>Items</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Loading combos...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ SETTINGS SECTION ============ -->
+      <div class="admin-section" id="admin-settings" style="display:none;">
+        <div class="admin-card">
+          <h3>Shop Settings</h3>
+          <form data-validate data-no-generic>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Shop Name</label>
+                <input type="text" class="form-control" value="Vendhan Crackers">
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" class="form-control" value="+91 98400 12345">
+              </div>
+              <div class="form-group full">
+                <label>Address</label>
+                <textarea class="form-control" rows="2">42, Festival Street, Near Old Bus Stand, Chennai — 600001</textarea>
+              </div>
+              <div class="form-group">
+                <label>Delivery Charge (₹)</label>
+                <input type="number" class="form-control" value="49">
+              </div>
+              <div class="form-group">
+                <label>Free Delivery Above (₹)</label>
+                <input type="number" class="form-control" value="1000">
+              </div>
+              <div class="form-group">
+                <label>Minimum Order Amount (₹)</label>
+                <input type="number" class="form-control" value="2000" min="0">
+              </div>
+              <div class="form-group">
+                <label>GST (%)</label>
+                <input type="number" class="form-control" value="18">
+              </div>
+              <div class="form-group">
+                <label>Low Stock Alert Threshold</label>
+                <input type="number" class="form-control" value="20">
+              </div>
+              <div class="form-group">
+                <label>Trusted Since Year</label>
+                <input type="number" class="form-control" min="1900" max="2100">
+              </div>
+              <div class="form-group">
+                <label>Customer Count</label>
+                <input type="number" class="form-control" min="0">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:8px;"><i class="fas fa-save"></i> Save Settings</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- ============ CONTACT DETAILS SECTION ============ -->
+      <div class="admin-section" id="admin-contact-details" style="display:none;">
+        <div class="admin-card">
+          <h3>Contact Details</h3>
+          <p style="color:var(--text-muted); font-size:0.85rem; margin-top:-8px;">Manage all shop/contact details shown across the website. Every public page reads these values automatically.</p>
+          <form data-validate data-no-generic>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Shop Name</label>
+                <input type="text" class="form-control" value="Vendhan Crackers">
+              </div>
+              <div class="form-group">
+                <label>Company Name</label>
+                <input type="text" class="form-control" value="Vendhan Enterprises">
+              </div>
+              <div class="form-group">
+                <label>Phone 1</label>
+                <input type="tel" class="form-control" value="+91 98400 12345">
+              </div>
+              <div class="form-group">
+                <label>Phone 2</label>
+                <input type="tel" class="form-control" value="+91 44 2653 7890">
+              </div>
+              <div class="form-group">
+                <label>Email 1</label>
+                <input type="email" class="form-control" value="hello@vendhancrackers.in">
+              </div>
+              <div class="form-group">
+                <label>Email 2</label>
+                <input type="email" class="form-control" value="support@vendhancrackers.in">
+              </div>
+              <div class="form-group full">
+                <label>Address</label>
+                <textarea class="form-control" rows="2">42, Festival Street, Near Old Bus Stand, Chennai — 600001</textarea>
+              </div>
+              <div class="form-group">
+                <label>Monday – Saturday Hours</label>
+                <input type="text" class="form-control" value="Mon – Sat: 9:00 AM – 9:00 PM">
+              </div>
+              <div class="form-group">
+                <label>Sunday Hours</label>
+                <input type="text" class="form-control" value="Sunday: 10:00 AM – 8:00 PM">
+              </div>
+              <div class="form-group">
+                <label>Festival Season Hours</label>
+                <input type="text" class="form-control" value="Festival Season: Extended Hours">
+              </div>
+              <div class="form-group">
+                <label>WhatsApp Link</label>
+                <input type="url" class="form-control" placeholder="https://wa.me/919840012345">
+              </div>
+              <div class="form-group">
+                <label>Facebook Link</label>
+                <input type="url" class="form-control" placeholder="https://facebook.com/...">
+              </div>
+              <div class="form-group">
+                <label>Instagram Link</label>
+                <input type="url" class="form-control" placeholder="https://instagram.com/...">
+              </div>
+              <div class="form-group">
+                <label>Twitter / X Link</label>
+                <input type="url" class="form-control" placeholder="https://x.com/...">
+              </div>
+              <div class="form-group full">
+                <label>Google Map Embed URL</label>
+                <textarea class="form-control" rows="2">https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.0074118003454!2d77.72415797407349!3d9.641433279103854!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b06d900295818ff%3A0x8660c67bf4148bae!2sVendhan%20Fire%20Works!5e1!3m2!1sen!2sin!4v1787085840469!5m2!1sen!2sin</textarea>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:8px;"><i class="fas fa-save"></i> Save Contact Details</button>
+          </form>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ============ PRODUCT VIEW MODAL ============ -->
+  <div class="modal-overlay" id="product-view-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Product Details</h3>
+        <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+      </div>
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <img id="pv-img" src="" alt="Product" style="width:120px; height:120px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+        <div style="flex:1; min-width:200px;">
+          <h3 id="pv-name" style="margin:0 0 8px;"></h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; font-size:0.85rem;">
+            <div><span style="color:var(--text-muted);">Category</span><br><b id="pv-category"></b></div>
+            <div><span style="color:var(--text-muted);">Status</span><br><b id="pv-status"></b></div>
+            <div><span style="color:var(--text-muted);">Price</span><br><b id="pv-price"></b></div>
+            <div><span style="color:var(--text-muted);">Original Price</span><br><b id="pv-original"></b></div>
+            <div><span style="color:var(--text-muted);">Discount</span><br><b id="pv-discount"></b></div>
+            <div><span style="color:var(--text-muted);">Stock</span><br><b id="pv-stock"></b></div>
+          </div>
+          <div style="margin-top:12px; font-size:0.85rem;"><span style="color:var(--text-muted);">Description</span><br><span id="pv-desc"></span></div>
+        </div>
+      </div>
+      <div style="margin-top:16px; text-align:right;">
+        <button class="btn btn-ghost" data-modal-close>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PRODUCT MODAL ============ -->
+  <div class="modal-overlay" id="product-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Add / Edit Product</h3>
+        <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+      </div>
+      <form data-validate data-no-generic id="product-form">
+        <div class="form-group">
+          <label>Product Name <span>*</span></label>
+          <input type="text" class="form-control" placeholder="e.g. Deluxe Sparkler Pack" required>
+          <span class="form-error">Please enter product name</span>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Category <span>*</span></label>
+            <select class="form-control" required>
+              <option value="">Select category</option>
+            </select>
+            <span class="form-error">Please select a category</span>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select class="form-control">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description <span>*</span></label>
+          <textarea class="form-control" rows="3" placeholder="Product description" required></textarea>
+          <span class="form-error">Please enter a description</span>
+        </div>
+        <div class="form-grid pricing-grid">
+          <div class="form-group">
+            <label>Original Price (₹) <span>*</span></label>
+            <input type="number" class="form-control pricing-original" placeholder="e.g. 100" min="0.01" step="0.01" required>
+            <span class="form-error">Please enter a valid original price</span>
+          </div>
+          <div class="form-group">
+            <label>Category Discount</label>
+            <div class="form-control-static pricing-category-discount">—</div>
+            <span class="form-hint">Applied automatically from the selected category</span>
+          </div>
+          <div class="form-group">
+            <label>Selling Price (₹) <span class="lock-icon" title="Auto-calculated, not editable">🔒</span></label>
+            <input type="text" class="form-control pricing-selling" readonly value="—">
+            <span class="form-hint">Auto calculated from Original Price × (100 − Discount) / 100</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Stock Quantity <span>*</span></label>
+          <input type="number" class="form-control" id="stock-quantity-input" placeholder="e.g. 100" required>
+          <span class="form-error">Please enter stock quantity</span>
+        </div>
+        <div class="form-group">
+          <label>Product Image <span>*</span></label>
+          <input type="file" class="form-control" id="product-image-input" accept="image/*">
+          <span class="form-error">Please select an image.</span>
+          <div class="product-image-preview" id="product-image-preview">
+            <img src="" alt="Product image preview">
+            <span class="preview-empty">No image selected</span>
+          </div>
+          <span class="form-hint">JPG, PNG, WEBP or GIF. Max 5 MB.</span>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:8px;">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Product</button>
+          <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ CATEGORY MODAL ============ -->
+  <div class="modal-overlay" id="category-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Add Category</h3>
+        <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+      </div>
+      <form data-validate data-no-generic id="category-form">
+        <div class="form-group">
+          <label>Category Name <span>*</span></label>
+          <input type="text" class="form-control" placeholder="e.g. Sparklers" required>
+          <span class="form-error">Please enter category name</span>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea class="form-control" rows="3" placeholder="Category description"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Discount (%)</label>
+          <input type="number" class="form-control" placeholder="e.g. 20" min="0" max="100" step="0.01">
+          <span class="form-hint">Applied to all products in this category (0–100)</span>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:8px;">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Category</button>
+          <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ COMBO MODAL (Admin) ============ -->
+  <div class="modal-overlay" id="combo-modal">
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-header">
+        <h3 id="combo-modal-title">Add / Edit Combo</h3>
+        <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+      </div>
+      <form data-validate data-no-generic id="combo-form">
+        <div class="form-group">
+          <label>Combo Name <span>*</span></label>
+          <input type="text" class="form-control" id="combo-name-input" placeholder="e.g. Starter Combo" required>
+          <span class="form-error">Please enter combo name</span>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Price (₹) <span>*</span></label>
+            <input type="number" class="form-control" id="combo-price-input" placeholder="e.g. 500" min="0" step="0.01" required>
+            <span class="form-error">Please enter a valid price</span>
+          </div>
+          <div class="form-group">
+            <label>Discount (%)</label>
+            <input type="number" class="form-control" id="combo-discount-input" placeholder="e.g. 15" min="0" max="100" step="0.01">
+            <span class="form-hint">Optional 0–100</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-control" id="combo-status-select">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea class="form-control" id="combo-desc-input" rows="2" placeholder="Combo description"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Combo Products</label>
+          <div id="combo-editor-items"></div>
+          <button type="button" class="btn btn-ghost btn-sm" id="combo-editor-add-item" style="margin-top:8px;"><i class="fas fa-plus"></i> Add Product Slot</button>
+        </div>
+        <div class="form-group">
+          <label>Combo Image</label>
+          <input type="file" class="form-control" id="combo-image-input" accept="image/*">
+          <div class="product-image-preview" id="combo-image-preview">
+            <img src="" alt="Combo image preview">
+            <span class="preview-empty">No image selected</span>
+          </div>
+          <span class="form-hint">Optional. JPG, PNG, WEBP or GIF. Max 5 MB.</span>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:8px;">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Combo</button>
+          <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ COMBO VIEW MODAL ============ -->
+  <div class="modal-overlay" id="combo-view-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Combo Details</h3>
+        <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+      </div>
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <img id="cv-img" src="" alt="Combo" style="width:120px; height:120px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+        <div style="flex:1; min-width:200px;">
+          <h3 id="cv-name" style="margin:0 0 8px;"></h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; font-size:0.85rem;">
+            <div><span style="color:var(--text-muted);">Status</span><br><b id="cv-status"></b></div>
+            <div><span style="color:var(--text-muted);">Price</span><br><b id="cv-price"></b></div>
+            <div><span style="color:var(--text-muted);">Discount</span><br><b id="cv-discount"></b></div>
+            <div><span style="color:var(--text-muted);">Items</span><br><b id="cv-items"></b></div>
+          </div>
+          <div style="margin-top:12px; font-size:0.85rem;"><span style="color:var(--text-muted);">Description</span><br><span id="cv-desc"></span></div>
+        </div>
+      </div>
+      <div style="margin-top:16px; font-size:0.85rem;"><span style="color:var(--text-muted);">Combo Products</span><br><div id="cv-products" style="margin-top:4px; display:grid; gap:6px;"></div></div>
+      <div style="margin-top:16px; text-align:right;">
+        <button class="btn btn-ghost" data-modal-close>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUSTOMER DETAILS MODAL ============ -->
+  <div class="modal-overlay" id="customer-details-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Customer Details</h3>
+        <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+      </div>
+      <div id="customer-details-content" style="font-size:0.85rem;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin-bottom:16px;">
+          <div><span style="color:var(--text-muted);">Name</span><br><b id="cd-name"></b></div>
+          <div><span style="color:var(--text-muted);">Email</span><br><b id="cd-email"></b></div>
+          <div><span style="color:var(--text-muted);">Phone</span><br><b id="cd-phone"></b></div>
+          <div><span style="color:var(--text-muted);">Customer Type</span><br><b id="cd-type"></b></div>
+          <div><span style="color:var(--text-muted);">Status</span><br><b id="cd-status"></b></div>
+          <div><span style="color:var(--text-muted);">Joined Date</span><br><b id="cd-joined"></b></div>
+          <div><span style="color:var(--text-muted);">Orders</span><br><b id="cd-orders"></b></div>
+          <div><span style="color:var(--text-muted);">Total Spent</span><br><b id="cd-spent"></b></div>
+        </div>
+      </div>
+      <div style="margin-top:16px; text-align:right;">
+        <button class="btn btn-ghost" data-modal-close>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ORDER DETAILS MODAL ============ -->
+  <div class="modal-overlay" id="order-details-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Order Details</h3>
+        <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+      </div>
+      <div id="order-details-content" style="font-size:0.85rem;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin-bottom:16px;">
+          <div><span style="color:var(--text-muted);">Order ID</span><br><b id="od-id"></b></div>
+          <div><span style="color:var(--text-muted);">Date</span><br><b id="od-date"></b></div>
+          <div><span style="color:var(--text-muted);">Customer</span><br><b id="od-customer"></b></div>
+          <div><span style="color:var(--text-muted);">Phone</span><br><b id="od-phone"></b></div>
+          <div><span style="color:var(--text-muted);">Email</span><br><b id="od-email"></b></div>
+          <div><span style="color:var(--text-muted);">Status</span><br><b id="od-status"></b></div>
+          <div><span style="color:var(--text-muted);">Payment</span><br><b id="od-payment"></b></div>
+          <div><span style="color:var(--text-muted);">Total</span><br><b id="od-total"></b></div>
+        </div>
+        <div><span style="color:var(--text-muted);">Delivery Address</span><br><span id="od-address"></span></div>
+        <div style="margin-top:12px;"><span style="color:var(--text-muted);">Items</span></div>
+        <div id="od-items" style="margin-top:4px;"></div>
+      </div>
+      <div style="margin-top:16px; text-align:right;">
+        <button class="btn btn-ghost" data-modal-close>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js?v=2"></script>
+  <script src="js/api.js?v=3"></script>
+  <script src="js/pages.js?v=4"></script>
+  <script>
+    // Admin section switching
+    document.querySelectorAll('[data-admin-section]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const section = link.dataset.adminSection;
+        document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
+        const target = document.getElementById('admin-' + section);
+        if (target) target.style.display = 'block';
+        document.querySelectorAll('.admin-nav a').forEach(a => a.classList.remove('active'));
+        link.classList.add('active');
+        const titles = {
+          dashboard: 'Dashboard', products: 'Products', categories: 'Categories',
+          orders: 'Orders', customers: 'Customers', inventory: 'Inventory',
+          reports: 'Sales Reports', reviews: 'Reviews', contact: 'Contact Messages',
+          combos: 'Combos', 'contact-details': 'Contact Details', settings: 'Settings',
+          resellers: 'Resellers', commissions: 'Commissions'
+        };
+        const titleEl = document.getElementById('admin-page-title');
+        if (titleEl) titleEl.textContent = titles[section] || 'Dashboard';
+        // Close mobile sidebar
+        const sidebar = document.querySelector('.admin-sidebar');
+        if (sidebar) sidebar.classList.remove('open');
+      });
+    });
+
+    // Product form submit
+    document.addEventListener('DOMContentLoaded', () => {
+      // ESC closes open modals
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.modal-overlay.open').forEach(m => {
+            m.classList.remove('open');
+          });
+          const sidebar = document.querySelector('.admin-sidebar');
+          if (sidebar) sidebar.classList.remove('open');
+        }
+      });
+
+      const productForm = document.getElementById('product-form');
+      if (productForm) {
+        const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB — must match backend
+        const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        let previewObjectUrl = null;
+
+        const productImageInput = document.getElementById('product-image-input');
+        const imagePreviewWrap = document.getElementById('product-image-preview');
+        const imagePreviewImg = imagePreviewWrap ? imagePreviewWrap.querySelector('img') : null;
+        const previewEmpty = imagePreviewWrap ? imagePreviewWrap.querySelector('.preview-empty') : null;
+        const imageFormGroup = productImageInput ? productImageInput.closest('.form-group') : null;
+
+        /* ---------- Reset image state ---------- */
+        function resetProductImageState() {
+          if (productImageInput) productImageInput.value = '';
+          if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+          }
+          if (imagePreviewImg) imagePreviewImg.removeAttribute('src');
+          if (imagePreviewWrap) imagePreviewWrap.classList.remove('has-image');
+          if (previewEmpty) previewEmpty.style.display = '';
+          if (imageFormGroup) imageFormGroup.classList.remove('invalid');
+          delete productForm.dataset.editId;
+          delete productForm.dataset.existingImage;
+        }
+
+        /* ---------- Show image preview from file ---------- */
+        function previewImageFile(file) {
+          if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+          previewObjectUrl = URL.createObjectURL(file);
+          if (imagePreviewImg) imagePreviewImg.src = previewObjectUrl;
+          if (imagePreviewWrap) imagePreviewWrap.classList.add('has-image');
+          if (previewEmpty) previewEmpty.style.display = 'none';
+        }
+
+        /* ---------- Show existing image (edit mode) ---------- */
+        function showExistingImage(src) {
+          if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+          }
+          if (imagePreviewImg) imagePreviewImg.src = (typeof resolveImg === 'function' ? resolveImg(src) : src) || '';
+          if (imagePreviewWrap) imagePreviewWrap.classList.toggle('has-image', !!src);
+          if (previewEmpty) previewEmpty.style.display = src ? 'none' : '';
+        }
+
+        /* ---------- Clear modal state when opening for Add ---------- */
+        const productModalEl = document.getElementById('product-modal');
+        const addProductBtn = document.querySelector('[data-modal-open="#product-modal"]');
+        if (addProductBtn) {
+          addProductBtn.addEventListener('click', () => {
+            productForm.reset();
+            resetProductImageState();
+          });
+        }
+
+        /* ---------- Clear image state when modal closes ---------- */
+        if (productModalEl) {
+          productModalEl.addEventListener('click', (e) => {
+            if (e.target === productModalEl) {
+              resetProductImageState();
+            }
+          });
+          productModalEl.querySelectorAll('[data-modal-close]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              resetProductImageState();
+            });
+          });
+        }
+
+        /* ---------- File input change: preview with validation ---------- */
+        if (productImageInput) {
+          productImageInput.addEventListener('change', () => {
+            const file = productImageInput.files[0];
+            if (!file) return;
+
+            // Validate file type
+            if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+              productImageInput.value = '';
+              showExistingImage(productForm.dataset.existingImage || '');
+              showToast('Error', 'Please select a valid image file (JPG, PNG, WEBP, or GIF).', 'error');
+              return;
+            }
+
+            // Validate file size
+            if (file.size > MAX_IMAGE_SIZE) {
+              productImageInput.value = '';
+              showExistingImage(productForm.dataset.existingImage || '');
+              showToast('Error', 'Image must be smaller than 5 MB.', 'error');
+              return;
+            }
+
+            previewImageFile(file);
+            if (imageFormGroup) imageFormGroup.classList.remove('invalid');
+          });
+        }
+
+        // Load categories into product form
+        if (typeof AdminAPI !== 'undefined') {
+          AdminAPI.categories.list().then(data => {
+            const select = productForm.querySelector('select');
+            if (select && data.categories) {
+              select.innerHTML = '<option value="">Select category</option>' +
+                data.categories.map(c => `<option value="${c.id || c._id}" data-discount="${Number(c.discount) || 0}">${c.name}</option>`).join('');
+            }
+            updateProductSellingPreview();
+          }).catch(() => {});
+        }
+
+        /* ---------- Live Selling Price preview ---------- */
+        // The Selling Price is auto-calculated from the Original Price and the
+        // selected category's authoritative discount. It is never stored via a
+        // separate manual input — the backend derives the authoritative value.
+        function updateProductSellingPreview() {
+          const modal = document.getElementById('product-modal');
+          if (!modal) return;
+          const originalInput = modal.querySelector('.pricing-original');
+          const discountEl = modal.querySelector('.pricing-category-discount');
+          const sellingInput = modal.querySelector('.pricing-selling');
+          const categorySelect = modal.querySelector('select');
+          if (!originalInput || !discountEl || !sellingInput) return;
+
+          const discount = categorySelect && categorySelect.selectedOptions && categorySelect.selectedOptions[0]
+            ? (Number(categorySelect.selectedOptions[0].dataset.discount) || 0)
+            : 0;
+          discountEl.textContent = discount > 0 ? discount + '%' : '0%';
+
+          const raw = originalInput.value;
+          const original = raw !== '' ? parseFloat(raw) : NaN;
+          if (raw === '' || isNaN(original) || original <= 0) {
+            sellingInput.value = '—';
+            return;
+          }
+          const selling = Math.round(original * (100 - discount) / 100 * 100) / 100;
+          sellingInput.value = formatINR(selling);
+        }
+        // Expose for the pages.js edit handler which populates the modal.
+        window.updateProductSellingPreview = updateProductSellingPreview;
+
+        const productCategorySelect = productForm ? productForm.querySelector('select') : null;
+        const productOriginalPriceInput = productForm ? productForm.querySelector('.pricing-original') : null;
+        if (productCategorySelect) productCategorySelect.addEventListener('change', updateProductSellingPreview);
+        if (productOriginalPriceInput) productOriginalPriceInput.addEventListener('input', updateProductSellingPreview);
+
+        // Recalculate whenever the Add/Edit modal opens
+        const updatePricingOnOpen = () => updateProductSellingPreview();
+        if (addProductBtn) addProductBtn.addEventListener('click', updatePricingOnOpen);
+        if (productModalEl) productModalEl.addEventListener('click', (e) => {
+          if (e.target === productModalEl) updatePricingOnOpen();
+        });
+
+        // Field validation on blur
+        productForm.querySelectorAll('[required]').forEach(input => {
+          input.addEventListener('blur', () => {
+            const group = input.closest('.form-group');
+            if (!group) return;
+            group.classList.toggle('invalid', !input.value.trim());
+          });
+        });
+
+        /* ---------- Product-specific submit handler (only handler for this form) ---------- */
+        productForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          if (productForm.dataset.submitting === '1') return;
+
+          const nameInput = productForm.querySelector('input[placeholder="e.g. Deluxe Sparkler Pack"]');
+          const categorySelect = productForm.querySelector('select');
+          const statusSelect = productForm.querySelectorAll('select')[1];
+          const descriptionInput = productForm.querySelector('textarea');
+          const priceInput = productForm.querySelector('.pricing-original');
+          const stockInput = productForm.querySelector('#stock-quantity-input');
+          const isEdit = !!productForm.dataset.editId;
+
+          const name = nameInput ? nameInput.value : '';
+          const category = categorySelect ? categorySelect.value : '';
+          const status = statusSelect ? statusSelect.value : 'active';
+          const description = descriptionInput ? descriptionInput.value : '';
+          // Original Price is the ONLY price the admin enters. The Selling Price
+          // is auto-calculated server-side from this Original Price and the
+          // selected category's authoritative discount.
+          const price = parseFloat(priceInput ? priceInput.value : '');
+          const stock = parseInt(stockInput ? stockInput.value : '', 10);
+          const imageFile = productImageInput && productImageInput.files[0] ? productImageInput.files[0] : null;
+
+          // Validate required text/number fields
+          let valid = true;
+          productForm.querySelectorAll('[required]').forEach(input => {
+            const group = input.closest('.form-group');
+            if (!input.value.trim()) {
+              if (group) group.classList.add('invalid');
+              valid = false;
+            }
+          });
+          if (!valid) {
+            showToast('Error', 'Please fill in all required fields.', 'error');
+            return;
+          }
+          if (isNaN(price) || price <= 0) {
+            if (priceInput) priceInput.closest('.form-group').classList.add('invalid');
+            showToast('Error', 'Please enter a valid original price (greater than 0).', 'error');
+            return;
+          }
+          if (isNaN(stock) || stock < 0) {
+            if (stockInput) stockInput.closest('.form-group').classList.add('invalid');
+            showToast('Error', 'Please enter a valid stock quantity.', 'error');
+            return;
+          }
+
+          // Image validation:
+          // - New product: image required
+          // - Edit product: image optional if product already has one
+          const hasExistingImage = !!productForm.dataset.existingImage;
+          if (imageFile) {
+            if (!ALLOWED_IMAGE_TYPES.includes(imageFile.type)) {
+              showToast('Error', 'Please select a valid image file (JPG, PNG, WEBP, or GIF).', 'error');
+              if (imageFormGroup) imageFormGroup.classList.add('invalid');
+              return;
+            }
+            if (imageFile.size > MAX_IMAGE_SIZE) {
+              showToast('Error', 'Image must be smaller than 5 MB.', 'error');
+              if (imageFormGroup) imageFormGroup.classList.add('invalid');
+              return;
+            }
+          } else if (!isEdit && !hasExistingImage) {
+            if (imageFormGroup) imageFormGroup.classList.add('invalid');
+            showToast('Error', 'Please select an image.', 'error');
+            return;
+          }
+
+          // Build FormData
+          const formData = new FormData();
+          formData.append('name', name);
+          formData.append('category', category);
+          formData.append('status', status);
+          formData.append('description', description);
+          // Only the Original Price is submitted. The Selling Price (finalPrice)
+          // is derived server-side and must NOT be sent by the client.
+          formData.append('price', price);
+          formData.append('stock', stock);
+          if (imageFile) formData.append('image', imageFile);
+
+          const submitBtn = productForm.querySelector('button[type="submit"]');
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+          }
+          productForm.dataset.submitting = '1';
+
+          try {
+            if (isEdit) {
+              await AdminAPI.products.update(productForm.dataset.editId, formData);
+              showToast('Product updated', 'Product updated successfully.');
+            } else {
+              await AdminAPI.products.create(formData);
+              showToast('Product created', 'Product added successfully.');
+            }
+            document.querySelector('#product-modal').classList.remove('open');
+            productForm.reset();
+            resetProductImageState();
+            initAdminProducts();
+          } catch (err) {
+            showToast('Error', typeof friendlyError === 'function' ? friendlyError(err) : err.message, 'error');
+          } finally {
+            delete productForm.dataset.submitting;
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Product';
+            }
+          }
+        });
+      }
+
+      // Category form submit
+      const categoryForm = document.getElementById('category-form');
+      if (categoryForm) {
+        categoryForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          if (categoryForm.dataset.submitting === '1') return;
+          const name = categoryForm.querySelector('input[type="text"]').value;
+          const description = categoryForm.querySelector('textarea').value;
+          const discountInput = categoryForm.querySelector('input[placeholder="e.g. 20"]');
+          const discount = discountInput && discountInput.value !== '' ? parseFloat(discountInput.value) : 0;
+
+          if (!name.trim()) {
+            const group = categoryForm.querySelector('input[type="text"]').closest('.form-group');
+            if (group) group.classList.add('invalid');
+            showToast('Error', 'Please enter a category name.', 'error');
+            return;
+          }
+          if (isNaN(discount) || discount < 0 || discount > 100) {
+            if (discountInput) discountInput.closest('.form-group').classList.add('invalid');
+            showToast('Error', 'Discount must be between 0 and 100.', 'error');
+            return;
+          }
+
+          const submitBtn = categoryForm.querySelector('button[type="submit"]');
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+          }
+          categoryForm.dataset.submitting = '1';
+
+          try {
+            const editId = categoryForm.dataset.editId;
+            if (editId) {
+              await AdminAPI.categories.update(editId, { name, description, discount });
+              showToast('Category updated', 'Category updated successfully.');
+            } else {
+              await AdminAPI.categories.create({ name, description, discount });
+              showToast('Category created', 'Category added successfully.');
+            }
+            document.querySelector('#category-modal').classList.remove('open');
+            document.querySelector('#category-modal .modal-header h3').textContent = 'Add Category';
+            delete categoryForm.dataset.editId;
+            categoryForm.reset();
+            initAdminCategories();
+          } catch (err) {
+            showToast('Error', typeof friendlyError === 'function' ? friendlyError(err) : err.message, 'error');
+          } finally {
+            delete categoryForm.dataset.submitting;
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Category';
+            }
+          }
+        });
+      }
+
+    });
+  </script>
+</body>
+</html>

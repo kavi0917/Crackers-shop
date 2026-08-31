@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendhan Crackers — Celebrate Brighter. Celebrate Together.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <img src="public/assets/LS20260821220421.png" alt="Vendhan Fireworks" class="logo-img">
+        <span class="logo-tagline">Celebrate Brighter.</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="shop.html">Shop</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="icon-btn" title="Search"><i class="fas fa-search"></i></button>
+        <a href="cart.html" class="icon-btn" title="Cart">
+          <i class="fas fa-shopping-cart"></i>
+          <span class="cart-count">0</span>
+        </a>
+        <a href="login.html" class="nav-login"><i class="fas fa-user"></i> Login</a>
+        <button class="hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-menu">
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+      <a href="login.html" class="nav-login"><i class="fas fa-user"></i> Login</a>
+    </div>
+  </nav>
+
+  <!-- ============ SECTION 1: HERO ============ -->
+  <section class="hero">
+    <div class="firework"></div>
+    <div class="firework"></div>
+    <div class="firework"></div>
+    <div class="firework"></div>
+    <div class="firework"></div>
+    <div class="firework"></div>
+    <div class="hero-inner">
+      <div>
+        <div class="hero-badge"><i class="fas fa-star"></i> Trusted Since <span data-trusted-year></span></div>
+        <h1>Celebrate Brighter.<br><span class="grad-text">Celebrate Together.</span></h1>
+        <p>Discover quality crackers for every celebration, from traditional favourites to exciting new picks. Safe, premium and made for joyful moments.</p>
+        <div class="hero-btns">
+          <a href="shop.html" class="btn btn-primary btn-lg"><i class="fas fa-shopping-bag"></i> Shop Crackers</a>
+          <a href="shop.html#categories" class="btn btn-outline btn-lg"><i class="fas fa-th-large"></i> Explore Categories</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-card">
+          <div class="firework-emoji">🎆</div>
+          <h3>Premium Festival Collection</h3>
+          <p>Handpicked crackers with highest safety standards</p>
+          <div class="hero-stats">
+            <div class="stat"><b data-hero-years></b><span>Years</span></div>
+            <div class="stat"><b>200+</b><span>Products</span></div>
+            <div class="stat"><b data-hero-customers></b><span>Customers</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MAIN CONTENT ============ -->
+  <main id="main-content">
+
+  <!-- ============ SECTION 2: TRUST / HIGHLIGHTS ============ -->
+  <section class="trust-section">
+    <div class="container">
+      <div class="trust-grid">
+        <div class="trust-card">
+          <div class="trust-icon"><i class="fas fa-medal"></i></div>
+          <h4>Quality Products</h4>
+          <p>Licensed & certified crackers checked by quality experts.</p>
+        </div>
+        <div class="trust-card">
+          <div class="trust-icon"><i class="fas fa-tags"></i></div>
+          <h4>Affordable Prices</h4>
+          <p>Best festival prices with combos starting at just <span data-starting-price></span>.</p>
+        </div>
+        <div class="trust-card">
+          <div class="trust-icon"><i class="fas fa-shopping-cart"></i></div>
+          <h4>Easy Ordering</h4>
+          <p>Order online in minutes with doorstep delivery available.</p>
+        </div>
+        <div class="trust-card">
+          <div class="trust-icon"><i class="fas fa-shield-alt"></i></div>
+          <h4>Trusted Service</h4>
+          <p>Trusted by <span data-trusted-customers></span> happy families since <span data-trusted-year-card></span>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 3: SHOP BY CATEGORY ============ -->
+  <section class="section section-alt" id="categories">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Collections</span>
+        <h2 class="section-title">Shop by Category</h2>
+        <p class="section-sub mx-auto">From sparkling fountains to sky rockets — find your perfect festive collection.</p>
+      </div>
+      <div class="cat-grid" id="categories-grid">
+        <div class="empty-state" style="grid-column:1/-1; background:transparent; border:none;">
+          <div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div>
+          <h3>Loading categories...</h3>
+        </div>
+      </div>
+      <div class="cat-more-wrap" style="text-align:center; margin-top:var(--space-6);">
+        <a href="shop.html" class="btn btn-primary">
+          <i class="fas fa-th-large"></i> Show More Categories
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 4: FEATURED PRODUCTS ============ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Best Sellers</span>
+        <h2 class="section-title">Featured Products</h2>
+        <p class="section-sub mx-auto">Our most-loved crackers chosen by thousands of happy customers.</p>
+      </div>
+      <div class="product-grid" id="featured-products-grid">
+        <div class="empty-state" style="grid-column:1/-1; background:transparent; border:none;">
+          <div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div>
+          <h3>Loading products...</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 5: FESTIVAL BANNER ============ -->
+  <section class="section">
+    <div class="container">
+      <div class="festival-banner">
+        <div class="firework"></div>
+        <div class="firework"></div>
+        <div class="firework"></div>
+        <div class="fb-content">
+          <span class="hero-badge"><i class="fas fa-fire"></i> Diwali Special</span>
+          <h2>Make This<br>Celebration Special</h2>
+          <p>Explore our premium Diwali collection — curated for unforgettable family moments under the night sky.</p>
+          <a href="shop.html" class="btn btn-primary btn-lg"><i class="fas fa-fire"></i> Explore Collection</a>
+        </div>
+        <div class="fb-visual">
+          <div class="fb-box fb-box-img">
+            <img src="public/assets/Diwali%20special.png" alt="Diwali special celebration">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 6: BUDGET COMBO ============ -->
+  <section class="section section-dark">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow" style="background:rgba(255,255,255,0.1); color:var(--gold-light);">Unique Feature</span>
+        <h2 class="section-title">Build Your Festival Combo</h2>
+        <p class="section-sub mx-auto">Pick a budget, choose your favourites, and enjoy the best of our collection at unbeatable combo prices.</p>
+      </div>
+      <div class="combo-grid" id="combos-grid">
+        <div class="empty-state" style="grid-column:1/-1; background:transparent; border:none;">
+          <div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div>
+          <h3>Loading combos...</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 7: CUSTOMER REVIEWS ============ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Testimonials</span>
+        <h2 class="section-title">What Our Customers Say</h2>
+        <p class="section-sub mx-auto">Join thousands of families who trust Vendhan Crackers for their celebrations.</p>
+      </div>
+      <div class="review-grid" id="reviews-grid">
+        <div class="empty-state" style="grid-column:1/-1; background:transparent; border:none;">
+          <div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div>
+          <h3>Loading reviews...</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 8: SHOP LOCATION ============ -->
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Visit Us</span>
+        <h2 class="section-title">Our Shop Location</h2>
+        <p class="section-sub mx-auto">Come visit our store for a hands-on experience of our full collection.</p>
+      </div>
+      <div class="location-grid">
+        <div class="info-list">
+          <div class="info-item">
+            <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
+            <div>
+              <h4>Shop Address</h4>
+              <p><span data-shop-address>42, Festival Street,<br>Near Old Bus Stand,<br>Chennai — 600001, Tamil Nadu</span></p>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon"><i class="fas fa-phone-alt"></i></div>
+            <div>
+              <h4>Phone</h4>
+              <p><span data-shop-phone>+91 98400 12345</span><br><span data-shop-phone2>+91 44 2653 7890</span></p>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon"><i class="fas fa-clock"></i></div>
+            <div>
+              <h4>Opening Hours</h4>
+              <p><span data-shop-hours-monsat>Mon – Sat: 9:00 AM – 9:00 PM</span><br><span data-shop-hours-sun>Sunday: 10:00 AM – 8:00 PM</span><br><span data-shop-hours-festival>Festival Season: Extended Hours</span></p>
+            </div>
+          </div>
+          <a href="contact.html" class="btn btn-primary" style="align-self:flex-start;"><i class="fas fa-directions"></i> Get Directions</a>
+        </div>
+        <div class="map-placeholder">
+          <iframe data-shop-map
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.0074118003454!2d77.72415797407349!3d9.641433279103854!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b06d900295818ff%3A0x8660c67bf4148bae!2sVendhan%20Fire%20Works!5e1!3m2!1sen!2sin!4v1787085840469!5m2!1sen!2sin"
+            width="100%"
+            height="100%"
+            style="border:0; display:block; min-height:320px;"
+            allowfullscreen
+            loading="lazy"
+            referrerpolicy="strict-origin-when-cross-origin"
+            title="Vendhan Fire Works location on Google Maps">
+          </iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <!-- ============ SECTION 9: FOOTER ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="index.html" class="logo">
+            <div class="logo-icon"><i class="fas fa-fire"></i></div>
+            <div class="logo-text"><span data-shop-name>Vendhan Crackers</span><small>Celebrate Together</small></div>
+          </a>
+          <p class="footer-desc">Celebrate Brighter. Celebrate Together. Premium quality crackers trusted by families across Tamil Nadu since <span data-footer-since-year></span>.</p>
+          <div class="social-links">
+            <a href="#" data-shop-facebook aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" data-shop-instagram aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="#" data-shop-twitter aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            <a href="#" data-shop-whatsapp aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+          </div>
+        </div>
+        <div>
+          <h4>Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="shop.html">Shop</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="orders.html">My Orders</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Categories</h4>
+          <ul class="footer-links">
+            <li><a href="shop.html">Sparklers</a></li>
+            <li><a href="shop.html">Flower Pots</a></li>
+            <li><a href="shop.html">Rockets</a></li>
+            <li><a href="shop.html">Ground Chakkars</a></li>
+            <li><a href="shop.html">Fancy Crackers</a></li>
+            <li><a href="shop.html">Gift Boxes</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contact Info</h4>
+          <ul class="footer-contact">
+            <li><i class="fas fa-map-marker-alt"></i> <span data-shop-address>42, Festival Street, Near Old Bus Stand, Chennai — 600001</span></li>
+            <li><i class="fas fa-phone-alt"></i> <span data-shop-phone>+91 98400 12345</span></li>
+            <li><i class="fas fa-envelope"></i> <span data-shop-email>hello@vendhancrackers.in</span></li>
+            <li><i class="fas fa-clock"></i> <span data-shop-hours-monsat>Mon–Sat: 9 AM – 9 PM</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        © 2026 <span data-shop-name>Vendhan Crackers</span>. All rights reserved. | Celebrate Brighter. Celebrate Together. | ™ Trademark of <span data-shop-company>Vendhan Enterprises</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ COMBO CUSTOMIZATION MODAL ============ -->
+  <div class="modal-overlay" id="combo-customize-modal" aria-hidden="true">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <h3 id="combo-customize-title">Build Your Combo</h3>
+        <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+      </div>
+      <div id="combo-customize-body">
+        <div class="empty-state" style="background:transparent; border:none;">
+          <div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div>
+          <h3>Loading combo...</h3>
+        </div>
+      </div>
+      <div style="display:flex; gap:12px; margin-top:16px; align-items:center;">
+        <button class="btn btn-primary" id="combo-customize-add" style="display:none;"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+        <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pages.js"></script>
+</body>
+</html>

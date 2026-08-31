@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop — Vendhan Crackers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <img src="public/assets/LS20260821220421.png" alt="Vendhan Fireworks" class="logo-img">
+        <span class="logo-tagline">Celebrate Brighter.</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="shop.html">Shop</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="icon-btn" title="Search"><i class="fas fa-search"></i></button>
+        <a href="cart.html" class="icon-btn" title="Cart">
+          <i class="fas fa-shopping-cart"></i>
+          <span class="cart-count">0</span>
+        </a>
+        <a href="login.html" class="nav-login"><i class="fas fa-user"></i> Login</a>
+        <button class="hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-menu">
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+      <a href="login.html" class="nav-login"><i class="fas fa-user"></i> Login</a>
+    </div>
+  </nav>
+
+  <!-- ============ PAGE HEADER ============ -->
+  <section class="page-header">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html">Home</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Shop</span>
+      </div>
+      <h1>Explore Our Crackers</h1>
+      <p>From traditional sparklers to premium gift boxes — discover quality crackers for every celebration.</p>
+    </div>
+  </section>
+
+  <!-- ============ SHOP LAYOUT ============ -->
+  <div class="container">
+    <div class="shop-layout">
+
+      <!-- FILTER SIDEBAR -->
+      <aside class="filter-panel">
+        <h3>
+          Filters
+          <button class="btn btn-sm btn-ghost">Clear All</button>
+        </h3>
+
+        <div class="filter-group" id="filter-category-group">
+          <h4>Category</h4>
+          <select class="category-select" id="category-select">
+            <option value="">All Categories</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <h4>Price Range</h4>
+          <div style="display:flex;gap:8px;margin-bottom:6px;">
+            <input type="number" id="price-min" placeholder="Min ₹" min="0" style="width:50%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;">
+            <input type="number" id="price-max" placeholder="Max ₹" min="0" style="width:50%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;">
+          </div>
+          <div class="range-labels" id="price-range-label" style="font-size:0.78rem;color:var(--text-muted);">All prices</div>
+        </div>
+
+        <div class="filter-group">
+          <h4>Availability</h4>
+          <label><input type="radio" name="avail" value="all" checked> All</label>
+          <label><input type="radio" name="avail" value="in_stock"> In Stock</label>
+          <label><input type="radio" name="avail" value="low_stock"> Low Stock</label>
+          <label><input type="radio" name="avail" value="out_of_stock"> Out of Stock</label>
+        </div>
+
+        <div class="filter-group" id="filter-discount-group">
+          <h4>Discount</h4>
+          <label><input type="radio" name="discount" value=""> None</label>
+          <label><input type="radio" name="discount" value="50"> 50% or more</label>
+          <label><input type="radio" name="discount" value="30"> 30% or more</label>
+          <label><input type="radio" name="discount" value="20"> 20% or more</label>
+          <label><input type="radio" name="discount" value="10"> 10% or more</label>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <div>
+        <!-- Toolbar -->
+        <div class="shop-toolbar">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search crackers...">
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-outline-dark btn-sm filter-toggle">
+              <i class="fas fa-sliders-h"></i> Filters
+            </button>
+            <select class="select">
+              <option>Sort: Featured</option>
+              <option>Price: Low to High</option>
+              <option>Price: High to Low</option>
+              <option>Rating: Highest First</option>
+              <option>Newest Arrivals</option>
+            </select>
+            <div class="view-toggle">
+              <button class="active" data-view="grid" title="Grid view"><i class="fas fa-th-large"></i></button>
+              <button data-view="list" title="List view"><i class="fas fa-list"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="product-grid">
+          <div class="empty-state" style="grid-column:1/-1; background:transparent; border:none;">
+            <div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div>
+            <h3>Loading products...</h3>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav class="pagination">
+          <button class="page-btn" disabled><i class="fas fa-chevron-left"></i></button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn" disabled><i class="fas fa-chevron-right"></i></button>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="index.html" class="logo">
+            <div class="logo-icon"><i class="fas fa-fire"></i></div>
+            <div class="logo-text"><span data-shop-name>Vendhan Crackers</span><small>Celebrate Together</small></div>
+          </a>
+          <p class="footer-desc">Celebrate Brighter. Celebrate Together. Premium quality crackers trusted by families across Tamil Nadu since <span data-footer-since-year></span>.</p>
+          <div class="social-links">
+            <a href="#" data-shop-facebook aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" data-shop-instagram aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="#" data-shop-twitter aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            <a href="#" data-shop-whatsapp aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+          </div>
+        </div>
+        <div>
+          <h4>Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="shop.html">Shop</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="orders.html">My Orders</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Categories</h4>
+          <ul class="footer-links">
+            <li><a href="shop.html">Sparklers</a></li>
+            <li><a href="shop.html">Flower Pots</a></li>
+            <li><a href="shop.html">Rockets</a></li>
+            <li><a href="shop.html">Ground Chakkars</a></li>
+            <li><a href="shop.html">Fancy Crackers</a></li>
+            <li><a href="shop.html">Gift Boxes</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contact Info</h4>
+          <ul class="footer-contact">
+            <li><i class="fas fa-map-marker-alt"></i> <span data-shop-address>42, Festival Street, Near Old Bus Stand, Chennai — 600001</span></li>
+            <li><i class="fas fa-phone-alt"></i> <span data-shop-phone>+91 98400 12345</span></li>
+            <li><i class="fas fa-envelope"></i> <span data-shop-email>hello@vendhancrackers.in</span></li>
+            <li><i class="fas fa-clock"></i> <span data-shop-hours-monsat>Mon–Sat: 9 AM – 9 PM</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        © 2026 <span data-shop-name>Vendhan Crackers</span>. All rights reserved. | Celebrate Brighter. Celebrate Together. | ™ Trademark of <span data-shop-company>Vendhan Enterprises</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pages.js"></script>
+</body>
+</html>
