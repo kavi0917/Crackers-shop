@@ -152,6 +152,28 @@ app.use('/api/admin', require('./routes/adminResellers'));
 app.use('/api/referral', require('./routes/referral'));
 app.use('/api/reseller', require('./routes/referral'));
 
+/* ---------- Static Frontend (customer-facing site) ----------
+   Serve the top-level HTML/CSS/JS/assets so the whole application can be
+   opened at http://localhost:5000/ (same origin) instead of file://.
+   Registered AFTER the API routes so /api/* always resolves to Express
+   routes first; unknown /api/* paths still fall through to the JSON 404
+   handler below. Backend source, secrets, node_modules, logs and dotfiles
+   are never exposed. */
+const PROJECT_ROOT = path.join(__dirname, '..');
+const SENSITIVE_PATH = /^\/backend\b|\/node_modules\b|\/\.git\b|\.env(\.|$)|\.log$/i;
+app.use((req, res, next) => {
+  const pathname = decodeURIComponent(req.path || '').toLowerCase();
+  if (SENSITIVE_PATH.test(pathname)) {
+    return res.status(404).json({ success: false, message: 'Route not found', errors: [] });
+  }
+  next();
+});
+app.use(express.static(PROJECT_ROOT, {
+  index: 'index.html',
+  dotfiles: 'deny',
+  extensions: ['html']
+}));
+
 /* ---------- 404 Handler ---------- */
 app.use(notFoundHandler);
 

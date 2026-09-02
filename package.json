@@ -1,4 +1,11 @@
 {
+  "name": "vendhan-crackers",
+  "version": "1.0.0",
+  "description": "Vendhan Crackers - full-stack e-commerce frontend + backend",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev"
+  },
   "dependencies": {
     "express-validator": "^7.3.2",
     "multer": "^2.2.0",

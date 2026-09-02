@@ -463,8 +463,19 @@ async function initHomePage() {
   } catch (e) {
     console.error('Home load error:', e.message);
     const sections = [featuredGrid, catGrid, comboGrid, reviewGrid];
+    const retryHtml = (title, msg) => `
+      <div class="empty-state" style="grid-column:1/-1; background:transparent; border:none;">
+        <div class="empty-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <h3>${title}</h3>
+        <p>${msg}</p>
+        <button type="button" class="btn btn-primary" data-home-retry><i class="fas fa-redo"></i> Try Again</button>
+      </div>`;
     sections.forEach(el => {
-      if (el) el.innerHTML = emptyState('Failed to load', 'Please refresh the page or try again later.');
+      if (el) el.innerHTML = retryHtml('Failed to load', 'Unable to load. Please try again.');
+    });
+    // Retry re-runs the whole home data load (single button per section).
+    document.querySelectorAll('[data-home-retry]').forEach(btn => {
+      btn.addEventListener('click', () => initHomePage());
     });
   }
 }
@@ -2503,7 +2514,7 @@ function initAdminLoginPage() {
       showToast('Admin login failed', safeError(err), 'error');
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login to Dashboard';
       }
     }
   });
@@ -3044,7 +3055,7 @@ async function initAdminProducts() {
             if (descriptionInput) descriptionInput.value = product.description || '';
             // Original Price is loaded from product.originalPrice (admin-entered original).
             // The Selling Price is auto-derived on the backend and stored as product.price.
- Read-only.
+            // Read-only.
             if (priceInput) priceInput.value = product.originalPrice || '';
             if (stockInput) stockInput.value = product.stock || '';
 
