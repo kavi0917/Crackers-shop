@@ -116,52 +116,66 @@ testAsync('TEST 7c — Validator REJECTS a non-positive Original Price', async (
     body: {
       name: 'Test Product',
       category: '507f1f77bcf86cd799439011',
-      price: 0,
+      originalPrice: 0,
       status: 'active'
     }
   };
   for (const v of validateProduct) await v.run(req);
   const errors = validationResult(req).array();
-  assert.ok(errors.length > 0, 'expected price<=0 to be rejected');
+  assert.ok(errors.length > 0, 'expected originalPrice<=0 to be rejected');
 });
 testAsync('TEST 7d — Validator REJECTS a negative Original Price', async () => {
   const req = {
     body: {
       name: 'Test Product',
       category: '507f1f77bcf86cd799439011',
-      price: -5,
+      originalPrice: -5,
       status: 'active'
     }
   };
   for (const v of validateProduct) await v.run(req);
   const errors = validationResult(req).array();
-  assert.ok(errors.length > 0, 'expected negative price to be rejected');
+  assert.ok(errors.length > 0, 'expected negative originalPrice to be rejected');
 });
 testAsync('TEST 7e — Validator REJECTS a non-numeric Original Price', async () => {
   const req = {
     body: {
       name: 'Test Product',
       category: '507f1f77bcf86cd799439011',
-      price: 'not-a-number',
+      originalPrice: 'not-a-number',
       status: 'active'
     }
   };
   for (const v of validateProduct) await v.run(req);
   const errors = validationResult(req).array();
-  assert.ok(errors.length > 0, 'expected non-numeric price to be rejected');
+  assert.ok(errors.length > 0, 'expected non-numeric originalPrice to be rejected');
 });
 testAsync('TEST 7f — Validator ACCEPTS a valid positive Original Price', async () => {
   const req = {
     body: {
       name: 'Test Product',
       category: '507f1f77bcf86cd799439011',
-      price: 100,
+      originalPrice: 100,
       status: 'active'
     }
   };
   for (const v of validateProduct) await v.run(req);
   const errors = validationResult(req).array();
   assert.strictEqual(errors.length, 0, 'expected valid product to pass validation');
+});
+testAsync('TEST 7g — Validator REJECTS a client-submitted price (selling is derived)', async () => {
+  const req = {
+    body: {
+      name: 'Test Product',
+      category: '507f1f77bcf86cd799439011',
+      originalPrice: 100,
+      price: 999,
+      status: 'active'
+    }
+  };
+  for (const v of validateProduct) await v.run(req);
+  const errors = validationResult(req).array();
+  assert.ok(errors.length > 0, 'expected client price to be rejected');
 });
 }
 

@@ -1463,7 +1463,7 @@
           formData.append('description', description);
           // Only the Original Price is submitted. The Selling Price (finalPrice)
           // is derived server-side and must NOT be sent by the client.
-          formData.append('price', price);
+          formData.append('originalPrice', price);
           formData.append('stock', stock);
           if (imageFile) formData.append('image', imageFile);
 

@@ -41,16 +41,21 @@ async function getCategoryProducts(id, { page, limit, skip }) {
     .skip(skip)
     .limit(limit);
 
-  // Attach category-based discount info to each product
+  // Attach pricing values. Stored model already carries the selling `price`,
+  // `originalPrice`, and category `discount` — expose them directly.
   const enriched = products.map((p) => {
-    const categoryDiscount = p.category && p.category.discount !== undefined ? p.category.discount : 0;
-    const pricing = calculateProductPricing(p.price, categoryDiscount);
+    const storedOriginal = (typeof p.originalPrice === 'number' && !Number.isNaN(p.originalPrice) && p.originalPrice > 0)
+      ? p.originalPrice
+      : p.price;
+    const storedSelling = (typeof p.price === 'number' && !Number.isNaN(p.price)) ? p.price : 0;
+    const storedDiscount = (typeof p.discount === 'number' && !Number.isNaN(p.discount)) ? p.discount : 0;
     return {
       ...p.toObject(),
-      discountPercent: pricing.discountPercent,
-      discountAmount: pricing.discountAmount,
-      finalPrice: pricing.finalPrice,
-      originalPrice: pricing.originalPrice
+      discountPercent: storedDiscount,
+      discountAmount: Math.round(storedOriginal * storedDiscount / 100 * 100) / 100,
+      finalPrice: storedSelling,
+      price: storedSelling,
+      originalPrice: storedOriginal
     };
   });
 

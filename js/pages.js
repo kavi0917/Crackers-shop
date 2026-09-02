@@ -3042,9 +3042,10 @@ async function initAdminProducts() {
             if (categorySelect) categorySelect.value = (product.category && product.category._id) || product.categoryId || product.category || '';
             if (statusSelect) statusSelect.value = product.status || 'active';
             if (descriptionInput) descriptionInput.value = product.description || '';
-            // Original Price is loaded directly from product.price (the base/original price).
-            // The Selling Price is auto-derived on the backend and shown read-only.
-            if (priceInput) priceInput.value = product.price || '';
+            // Original Price is loaded from product.originalPrice (admin-entered original).
+            // The Selling Price is auto-derived on the backend and stored as product.price.
+ Read-only.
+            if (priceInput) priceInput.value = product.originalPrice || '';
             if (stockInput) stockInput.value = product.stock || '';
 
             if (imageInput) imageInput.value = '';

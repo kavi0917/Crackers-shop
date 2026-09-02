@@ -114,7 +114,13 @@ async function loadCart(userId) {
     // so the frontend can show an "unavailable" state
     const category = categoryMap[product.category ? product.category.toString() : ''];
     const categoryDiscount = category ? (category.discount || 0) : 0;
-    const pricing = calculateProductPricing(product.price, categoryDiscount, secondOrderDiscountPercent, membershipDiscountPercent, referralDiscountPercent);
+    // Stored model: originalPrice = admin-entered original, price = selling,
+    // discount = category discount. Use originalPrice as the pricing base so the
+    // derived selling price matches the stored selling price (no double discount).
+    const storedOriginal = (typeof product.originalPrice === 'number' && !Number.isNaN(product.originalPrice) && product.originalPrice > 0)
+      ? product.originalPrice
+      : product.price;
+    const pricing = calculateProductPricing(storedOriginal, categoryDiscount, secondOrderDiscountPercent, membershipDiscountPercent, referralDiscountPercent);
 
     // Unit price AFTER the per-product category discount but BEFORE any order-level
     // discount (second-order / membership / referral). This is the Subtotal basis:

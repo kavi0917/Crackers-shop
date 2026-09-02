@@ -14,17 +14,20 @@ router.get('/', async (req, res) => {
       .limit(6);
 
     const featuredMapped = featuredProducts.map(p => {
-      const categoryDiscount = p.category && p.category.discount !== undefined ? p.category.discount : 0;
-      const pricing = calculateProductPricing(p.price, categoryDiscount);
+      const storedOriginal = (typeof p.originalPrice === 'number' && !Number.isNaN(p.originalPrice) && p.originalPrice > 0)
+        ? p.originalPrice
+        : p.price;
+      const storedSelling = (typeof p.price === 'number' && !Number.isNaN(p.price)) ? p.price : 0;
+      const storedDiscount = (typeof p.discount === 'number' && !Number.isNaN(p.discount)) ? p.discount : 0;
       return {
         id: p._id,
         name: p.name,
-        price: pricing.finalPrice,
-        originalPrice: pricing.originalPrice,
-        discount: pricing.discountPercent,
-        discountPercent: pricing.discountPercent,
-        discountAmount: pricing.discountAmount,
-        finalPrice: pricing.finalPrice,
+        price: storedSelling,
+        originalPrice: storedOriginal,
+        discount: storedDiscount,
+        discountPercent: storedDiscount,
+        discountAmount: Math.round(storedOriginal * storedDiscount / 100 * 100) / 100,
+        finalPrice: storedSelling,
         images: p.images || [],
         mainImage: p.images && p.images.length > 0 ? p.images[0] : null,
         rating: p.rating,

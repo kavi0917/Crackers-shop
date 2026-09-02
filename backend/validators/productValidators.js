@@ -29,13 +29,21 @@ const validateProduct = [
     .notEmpty().withMessage('Category is required')
     .isMongoId().withMessage('Invalid category ID format'),
 
-  body('price')
-    .notEmpty().withMessage('Original Price is required')
-    .isFloat({ gt: 0 }).withMessage('Original price must be a number greater than 0'),
-
+  // The admin enters the Original Price. It is stored as `originalPrice`.
   body('originalPrice')
-    .optional({ nullable: true })
-    .isFloat({ min: 0 }).withMessage('MRP / compare-at price must be a number greater than or equal to 0'),
+    .notEmpty().withMessage('Original Price is required')
+    .isFloat({ gt: 0 }).withMessage('Original Price must be a number greater than 0'),
+
+  // The Selling Price is derived server-side from Original Price × (100 − category discount)/100.
+  // It is never accepted from the client.
+  body('price')
+    .custom((value, { req }) => {
+      if (req.body.price !== undefined) {
+        throw new Error('Selling price is auto-calculated from Original Price and category discount');
+      }
+      return true;
+    })
+    .withMessage('Selling price is auto-calculated and cannot be set manually'),
 
   // Selling price is NEVER accepted from the client. It is always derived
   // server-side from the Original Price + authoritative category discount.
