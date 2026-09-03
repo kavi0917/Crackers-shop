@@ -826,6 +826,58 @@ const SHOP_DETAIL_FALLBACKS = {
   mapEmbedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.0074118003454!2d77.72415797407349!3d9.641433279103854!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b06d900295818ff%3A0x8660c67bf4148bae!2sVendhan%20Fire%20Works!5e1!3m2!1sen!2sin!4v1787085840469!5m2!1sen!2sin'
 };
 
+/**
+ * Resolve an Admin-provided "Google Map Embed URL" value into a safe,
+ * renderable Google Maps embed URL.
+ *
+ * Accepted inputs:
+ *   - a direct embed URL: https://www.google.com/maps/embed… (also the
+ *     legacy https://maps.google.com/maps?…&output=embed format)
+ *   - a complete <iframe … src="…"></iframe> embed snippet, from which only
+ *     the src attribute is extracted.
+ *
+ * Any other value resolves to '' so the caller keeps the existing static
+ * fallback (no arbitrary URLs, no HTML injection).
+ */
+function extractGoogleMapsEmbedSrc(value) {
+  const raw = String(value == null ? '' : value).trim();
+  if (!raw) return '';
+
+  // Complete <iframe ...></iframe> embed code → keep only its src attribute.
+  let candidate = /^<iframe\b/i.test(raw)
+    ? (raw.match(/\bsrc\s*=\s*["']([^"']+)["']/i) || [])[1] || ''
+    : raw;
+
+  candidate = candidate.trim();
+  if (!candidate) return '';
+
+  // Only HTTPS Google Maps embed URLs are allowed:
+  //   https://www.google.com/maps/embed… (current embed format)
+  //   https://www.google.com/maps?…&output=embed… (legacy format)
+  //   https://maps.google.com/maps?…&output=embed… (legacy format)
+  if (
+    /^https:\/\/(www\.)?google\.com\/maps\/embed\/?(?:\?|#|$)/i.test(candidate) ||
+    /^https:\/\/(www\.)?google\.com\/maps\?(?:[^#]*&)?output=embed/i.test(candidate) ||
+    /^https:\/\/maps\.google\.com\/maps\?(?:[^#]*&)?output=embed/i.test(candidate)
+  ) {
+    return candidate;
+  }
+
+  // A Google Maps URL that is not embeddable (e.g. a normal
+  // https://www.google.com/maps/... page) cannot be framed by Google itself.
+  // Keep the existing fallback map and tell the site owner what to paste.
+  if (
+    /^https:\/\/(www\.)?google\.[a-z.]+\/maps\//i.test(candidate) ||
+    /^https:\/\/maps\.google\.com\//i.test(candidate)
+  ) {
+    console.warn(
+      '[Shop Map] The saved "Google Map Embed URL" is not an embeddable Google Maps URL. ' +
+      'Use Google Maps → Share → Embed a map, then paste the https://www.google.com/maps/embed?... ' +
+      'URL or the full <iframe> code into Admin → Contact Details. Keeping the existing fallback map.'
+    );
+  }
+  return '';
+}
 /*
  * Apply Admin-managed contact details to every marked element on the page:
  *   [data-shop-name]            → shop name
@@ -911,11 +963,13 @@ function applyShopDetails(settings) {
     });
   }
 
-  // Google Map embed iframe — existing map stays, only the src is managed
-  const mapUrl = val('mapEmbedUrl');
-  if (mapUrl) {
+  // Google Map embed iframe — existing map stays, only the src is managed.
+  // The Admin value can be a direct Google Maps embed URL or a complete
+  // <iframe> embed snippet; resolve it to a validated URL before using it.
+  const mapSrc = extractGoogleMapsEmbedSrc(val('mapEmbedUrl'));
+  if (mapSrc) {
     document.querySelectorAll('[data-shop-map]').forEach((el) => {
-      el.setAttribute('src', mapUrl);
+      el.setAttribute('src', mapSrc);
     });
   }
 }
