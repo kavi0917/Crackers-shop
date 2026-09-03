@@ -14,7 +14,20 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const app = express();
 
 /* ---------- Security Headers (helmet) ---------- */
-app.use(helmet());
+// Helmet's default CSP has no `frame-src`, so it falls back to `default-src 'self'`
+// and the browser blocks the Google Maps embed iframe ("This content is blocked.
+// Contact the site owner to fix the issue."). Allow only the Google Maps embed
+// hosts in `frame-src`; every other Helmet/CSP default stays exactly as before.
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        'frame-src': ["'self'", 'https://www.google.com', 'https://maps.google.com']
+      }
+    }
+  })
+);
 
 /* ---------- CORS ---------- */
 const allowedOrigins = process.env.CLIENT_URL
