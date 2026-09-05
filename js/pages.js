@@ -4580,7 +4580,7 @@ async function initAdminContact() {
         const tdD = document.createElement('td'); tdD.textContent = formatDate(m.createdAt);
         const tdSel = document.createElement('td');
         const sel = document.createElement('select'); sel.className = 'form-control';
-        sel.style.cssText = 'padding:4px 8px;font-size:0.75rem;'; sel.dataset.contactStatus = m.id;
+        sel.style.cssText = 'padding:4px 8px;font-size:0.75rem;'; sel.dataset.contactStatus = m.id || m._id;
         ['new','read','replied','closed'].forEach(v => {
           const opt = document.createElement('option'); opt.value = v;
           opt.textContent = v.charAt(0).toUpperCase() + v.slice(1);
@@ -4590,7 +4590,7 @@ async function initAdminContact() {
         const tdAct = document.createElement('td');
         const actDiv = document.createElement('div'); actDiv.className = 'table-actions';
         const delBtn = document.createElement('button'); delBtn.className = 'action-btn delete'; delBtn.title = 'Delete';
-        delBtn.dataset.deleteContact = m.id; delBtn.dataset.name = m.name || '';
+        delBtn.dataset.deleteContact = m.id || m._id; delBtn.dataset.name = m.name || '';
         delBtn.innerHTML = '<i class="fas fa-trash"></i>';
         actDiv.appendChild(delBtn); tdAct.appendChild(actDiv);
         [tdN,tdE,tdP,tdS,tdM,tdD,tdSel,tdAct].forEach(td => tr.appendChild(td));
@@ -4600,11 +4600,22 @@ async function initAdminContact() {
       // Status update handlers
       tbody.querySelectorAll('[data-contact-status]').forEach(select => {
         select.addEventListener('change', async () => {
+          if (select.disabled) return;
+          const previousValue = select.dataset.previousStatus || select.querySelector('option:checked').value;
+          select.disabled = true;
           try {
             await AdminAPI.contact.update(select.dataset.contactStatus, { status: select.value });
             showToast('Status updated', `Message marked as ${select.value}.`);
-          } catch (e) { showToast('Error', safeError(e), 'error'); }
+            select.dataset.previousStatus = select.value;
+          } catch (e) {
+            showToast('Error', safeError(e), 'error');
+            // Restore previous value so the dropdown does not show an unsaved status
+            select.value = previousValue;
+          } finally {
+            select.disabled = false;
+          }
         });
+        select.dataset.previousStatus = select.value;
       });
 
       // Delete handlers
