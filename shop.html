@@ -64,42 +64,46 @@
 
       <!-- FILTER SIDEBAR -->
       <aside class="filter-panel">
-        <h3>
-          Filters
-          <button class="btn btn-sm btn-ghost">Clear All</button>
-        </h3>
+        <h3>Filters</h3>
 
-        <div class="filter-group" id="filter-category-group">
+        <div class="filter-group">
           <h4>Category</h4>
-          <select class="category-select" id="category-select">
+          <select class="category-select" id="category-select" aria-label="Filter by category">
             <option value="">All Categories</option>
           </select>
         </div>
 
         <div class="filter-group">
-          <h4>Price Range</h4>
-          <div style="display:flex;gap:8px;margin-bottom:6px;">
-            <input type="number" id="price-min" placeholder="Min ₹" min="0" style="width:50%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;">
-            <input type="number" id="price-max" placeholder="Max ₹" min="0" style="width:50%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;">
+          <h4>Price (₹)</h4>
+          <div class="price-range-inputs">
+            <input type="number" id="price-min" class="price-input" placeholder="Min" min="0" inputmode="numeric" aria-label="Minimum price">
+            <span>—</span>
+            <input type="number" id="price-max" class="price-input" placeholder="Max" min="0" inputmode="numeric" aria-label="Maximum price">
           </div>
-          <div class="range-labels" id="price-range-label" style="font-size:0.78rem;color:var(--text-muted);">All prices</div>
+          <div class="range-labels" id="price-range-label">All prices</div>
         </div>
 
         <div class="filter-group">
           <h4>Availability</h4>
-          <label><input type="radio" name="avail" value="all" checked> All</label>
-          <label><input type="radio" name="avail" value="in_stock"> In Stock</label>
-          <label><input type="radio" name="avail" value="low_stock"> Low Stock</label>
-          <label><input type="radio" name="avail" value="out_of_stock"> Out of Stock</label>
+          <select class="category-select" id="availability-select" aria-label="Filter by availability">
+            <option value="">All</option>
+            <option value="in_stock">In Stock</option>
+            <option value="out_of_stock">Out of Stock</option>
+          </select>
         </div>
 
-        <div class="filter-group" id="filter-discount-group">
+        <div class="filter-group">
           <h4>Discount</h4>
-          <label><input type="radio" name="discount" value=""> None</label>
-          <label><input type="radio" name="discount" value="50"> 50% or more</label>
-          <label><input type="radio" name="discount" value="30"> 30% or more</label>
-          <label><input type="radio" name="discount" value="20"> 20% or more</label>
-          <label><input type="radio" name="discount" value="10"> 10% or more</label>
+          <select class="category-select" id="discount-select" aria-label="Filter by discount">
+            <option value="">All</option>
+            <option value="discounted">Discounted Products</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn btn-outline-dark btn-block" id="clear-filters-btn">
+            <i class="fas fa-times"></i> Clear Filters
+          </button>
         </div>
       </aside>
 
@@ -115,12 +119,14 @@
             <button class="btn btn-outline-dark btn-sm filter-toggle">
               <i class="fas fa-sliders-h"></i> Filters
             </button>
-            <select class="select">
-              <option>Sort: Featured</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-              <option>Rating: Highest First</option>
-              <option>Newest Arrivals</option>
+            <select class="select" id="sort-select" aria-label="Sort products">
+              <option value="">Default</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="name_asc">Name: A to Z</option>
+              <option value="name_desc">Name: Z to A</option>
+              <option value="newest">Newest Arrivals</option>
+              <option value="rating_desc">Rating: Highest First</option>
             </select>
             <div class="view-toggle">
               <button class="active" data-view="grid" title="Grid view"><i class="fas fa-th-large"></i></button>
@@ -128,6 +134,9 @@
             </div>
           </div>
         </div>
+
+        <!-- Result Count -->
+        <div class="shop-results" id="shop-result-count" aria-live="polite"></div>
 
         <!-- Product Grid -->
         <div class="product-grid">

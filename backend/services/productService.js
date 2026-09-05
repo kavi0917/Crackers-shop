@@ -26,10 +26,14 @@ async function validateCategoryExists(categoryId) {
 function buildProductFilter(query) {
   const filter = { status: 'active' };
 
-  // Search against name and description (regex, case-insensitive)
+  // Search against name and description (regex, case-insensitive).
+  // Leading/trailing whitespace is ignored so " flower " behaves like "flower".
   if (query.search) {
-    const searchRegex = new RegExp(query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    filter.$or = [{ name: searchRegex }, { description: searchRegex }];
+    const searchTerm = String(query.search).trim();
+    if (searchTerm) {
+      const searchRegex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      filter.$or = [{ name: searchRegex }, { description: searchRegex }];
+    }
   }
 
   // Category filter
@@ -76,13 +80,20 @@ function buildProductFilter(query) {
     }
   }
 
-  // Discount filter
+  // Discount filter — 'discounted' means any product carrying an active discount
+  // (stored discount > 0). A numeric value keeps the original "N% or more" meaning.
+  // The stored discount field is the same one pricing utilities use; filtering
+  // never changes any price.
   if (query.discount !== undefined) {
-    const discount = Number(query.discount);
-    if (isNaN(discount) || discount < 0 || discount > 100) {
-      throw new ApiError(400, 'Invalid discount filter', ['discount must be between 0 and 100']);
+    if (query.discount === 'discounted') {
+      filter.discount = { $gt: 0 };
+    } else {
+      const discount = Number(query.discount);
+      if (isNaN(discount) || discount < 0 || discount > 100) {
+        throw new ApiError(400, 'Invalid discount filter', ['discount must be "discounted" or a number between 0 and 100']);
+      }
+      filter.discount = { $gte: discount };
     }
-    filter.discount = { $gte: discount };
   }
 
   return filter;
@@ -100,12 +111,13 @@ function buildProductSort(sort) {
     discount_desc: { discount: -1 },
     rating_desc: { rating: -1 },
     name_asc: { name: 1 },
+    name_desc: { name: -1 },
     featured: { isFeatured: -1, rating: -1 }
   };
 
   if (!sort) return allowedSorts.featured;
   if (!allowedSorts[sort]) {
-    throw new ApiError(400, 'Invalid sort parameter', ['sort must be one of: newest, price_asc, price_desc, discount_desc, rating_desc, name_asc, featured']);
+    throw new ApiError(400, 'Invalid sort parameter', ['sort must be one of: newest, price_asc, price_desc, discount_desc, rating_desc, name_asc, name_desc, featured']);
   }
   return allowedSorts[sort];
 }

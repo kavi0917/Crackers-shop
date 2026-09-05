@@ -927,6 +927,35 @@ h1, h2, h3, h4, h5 { font-weight: 700; line-height: 1.2; color: var(--text-dark)
 /* Filter mobile button */
 .filter-toggle { display: none; }
 
+/* Shop results count — real number from backend pagination metadata */
+.shop-results {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+/* Price range filter inputs */
+.price-range-inputs { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); }
+.price-range-inputs .price-input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  font-size: var(--fs-sm);
+  color: var(--text-dark);
+  font-family: inherit;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.price-range-inputs .price-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,179,1,0.15); }
+.price-range-inputs > span { color: var(--text-muted); font-size: var(--fs-sm); }
+
+/* Filter action buttons (Clear Filters) */
+.filter-actions { margin-top: var(--space-5); }
+.filter-actions .btn { width: 100%; justify-content: center; }
+
 /* ============ PRODUCT DETAILS ============ */
 .pd-layout { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7); padding: var(--space-7) 0; }
 .pd-gallery { position: sticky; top: 96px; align-self: start; }

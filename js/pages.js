@@ -677,25 +677,18 @@ async function initShopPage() {
   if (!grid) return;
 
   let currentPage = 1;
+  let shopRequestSeq = 0; // guards against stale/overlapping responses
 
   // ---- Build API params from current filter state ----
   function buildParams() {
     const params = { page: currentPage, limit: 9 };
 
-    // Search
+    // Search — trimmed; backend matches case-insensitively
     const q = searchInput ? searchInput.value.trim() : '';
     if (q) params.search = q;
 
-    // Sort
-    if (sortSelect) {
-      const sortMap = {
-        'Price: Low to High': 'price_asc',
-        'Price: High to Low': 'price_desc',
-        'Rating: Highest First': 'rating_desc',
-        'Newest Arrivals': 'newest'
-      };
-      if (sortMap[sortSelect.value]) params.sort = sortMap[sortSelect.value];
-    }
+    // Sort — option values are the backend sort keys; empty = backend default
+    if (sortSelect && sortSelect.value) params.sort = sortSelect.value;
 
     if (!filterPanel) return params;
 
@@ -705,7 +698,7 @@ async function initShopPage() {
       params.category = catSelect.value;
     }
 
-    // Price — min/max number inputs
+    // Price — min/max number inputs (filtering only; never changes prices)
     const minInput = document.getElementById('price-min');
     const maxInput = document.getElementById('price-max');
     const minVal = minInput ? parseFloat(minInput.value) : NaN;
@@ -713,16 +706,16 @@ async function initShopPage() {
     if (!isNaN(minVal) && minVal >= 0) params.minPrice = minVal;
     if (!isNaN(maxVal) && maxVal >= 0) params.maxPrice = maxVal;
 
-    // Availability
-    const checkedAvail = filterPanel.querySelector('input[name="avail"]:checked');
-    if (checkedAvail && checkedAvail.value && checkedAvail.value !== 'all') {
-      params.availability = checkedAvail.value;
+    // Availability — empty = All
+    const availabilitySelect = document.getElementById('availability-select');
+    if (availabilitySelect && availabilitySelect.value) {
+      params.availability = availabilitySelect.value;
     }
 
-    // Discount — single-select radio
-    const checkedDiscount = filterPanel.querySelector('input[name="discount"]:checked');
-    if (checkedDiscount && checkedDiscount.value) {
-      params.discount = checkedDiscount.value;
+    // Discount — empty = All; 'discounted' = any product with discount > 0
+    const discountSelect = document.getElementById('discount-select');
+    if (discountSelect && discountSelect.value) {
+      params.discount = discountSelect.value;
     }
 
     return params;
@@ -730,7 +723,10 @@ async function initShopPage() {
 
   // ---- Central filter + render pipeline ----
   async function applyShopFilters() {
+    const requestId = ++shopRequestSeq;
+    const resultCountEl = document.getElementById('shop-result-count');
     try {
+      if (resultCountEl) resultCountEl.textContent = 'Loading products...';
       grid.textContent = '';
       const spinner = document.createElement('div');
       spinner.className = 'empty-state';
@@ -739,6 +735,17 @@ async function initShopPage() {
       grid.appendChild(spinner);
 
       const data = await PublicAPI.products(buildParams());
+
+      // Ignore stale responses — a newer filter/search change supersedes this one
+      if (requestId !== shopRequestSeq) return;
+
+      // Result count comes from the backend pagination metadata (server truth)
+      const total = (data.pagination && data.pagination.total) || 0;
+      if (resultCountEl) {
+        resultCountEl.textContent = total === 1 ? '1 product found' : `${total} products found`;
+      }
+
+      updatePriceRangeLabel();
 
       grid.textContent = '';
       if (!data.products || data.products.length === 0) {
@@ -753,10 +760,19 @@ async function initShopPage() {
         const h3 = document.createElement('h3');
         h3.textContent = 'No products found';
         const p = document.createElement('p');
-        p.textContent = 'Try adjusting your filters or search terms.';
+        p.textContent = 'Try changing your search or filters.';
         empty.appendChild(icon);
         empty.appendChild(h3);
         empty.appendChild(p);
+        const clearFiltersBtn = document.createElement('button');
+        clearFiltersBtn.className = 'btn btn-outline-dark btn-sm';
+        clearFiltersBtn.setAttribute('type', 'button');
+        const clearIcon = document.createElement('i');
+        clearIcon.className = 'fas fa-times';
+        clearFiltersBtn.appendChild(clearIcon);
+        clearFiltersBtn.appendChild(document.createTextNode(' Clear Filters'));
+        clearFiltersBtn.addEventListener('click', clearAllFilters);
+        empty.appendChild(clearFiltersBtn);
         grid.appendChild(empty);
       } else {
         renderProductCards(grid, data.products);
@@ -813,6 +829,9 @@ async function initShopPage() {
         });
       }
     } catch (e) {
+      // Stale failure — a newer request already took over the UI
+      if (requestId !== shopRequestSeq) return;
+      if (resultCountEl) resultCountEl.textContent = '';
       grid.textContent = '';
       const errDiv = document.createElement('div');
       errDiv.className = 'empty-state';
@@ -884,19 +903,19 @@ async function initShopPage() {
   if (priceMin) priceMin.addEventListener('input', onPriceChange);
   if (priceMax) priceMax.addEventListener('input', onPriceChange);
 
-  // ---- Availability radios — live ----
-  if (filterPanel) {
-    filterPanel.querySelectorAll('input[name="avail"]').forEach(radio => {
-      radio.addEventListener('change', () => { currentPage = 1; applyShopFilters(); });
-    });
-
-    // ---- Discount radios — live ----
-    filterPanel.querySelectorAll('input[name="discount"]').forEach(radio => {
-      radio.addEventListener('change', () => { currentPage = 1; applyShopFilters(); });
-    });
+  // ---- Availability select — live ----
+  const availabilitySelect = document.getElementById('availability-select');
+  if (availabilitySelect) {
+    availabilitySelect.addEventListener('change', () => { currentPage = 1; applyShopFilters(); });
   }
 
-  // ---- Search — debounced ----
+  // ---- Discount select — live ----
+  const discountSelect = document.getElementById('discount-select');
+  if (discountSelect) {
+    discountSelect.addEventListener('change', () => { currentPage = 1; applyShopFilters(); });
+  }
+
+  // ---- Search — debounced (case-insensitive on backend, trimmed here) ----
   if (searchInput) {
     let searchDebounce;
     searchInput.addEventListener('input', () => {
@@ -910,29 +929,40 @@ async function initShopPage() {
     sortSelect.addEventListener('change', () => { currentPage = 1; applyShopFilters(); });
   }
 
-  // ---- Clear All ----
-  const clearBtn = filterPanel ? filterPanel.querySelector('.btn-ghost') : null;
-  if (clearBtn) {
-    clearBtn.addEventListener('click', () => {
-      // Reset category to "All Categories"
-      const catSel = document.getElementById('category-select');
-      if (catSel) catSel.value = '';
-      // Reset price
-      if (priceMin) priceMin.value = '';
-      if (priceMax) priceMax.value = '';
-      // Reset availability
-      if (filterPanel) {
-        const firstAvail = filterPanel.querySelector('input[name="avail"]');
-        if (firstAvail) firstAvail.checked = true;
-        filterPanel.querySelectorAll('input[name="avail"]').forEach((r, i) => { if (i > 0) r.checked = false; });
-        // Reset discount
-        const firstDiscount = filterPanel.querySelector('input[name="discount"]');
-        if (firstDiscount) firstDiscount.checked = true;
-        filterPanel.querySelectorAll('input[name="discount"]').forEach((r, i) => { if (i > 0) r.checked = false; });
-      }
-      currentPage = 1;
-      applyShopFilters();
-    });
+  // ---- Price range label — clearly shows the currently applied values ----
+  function updatePriceRangeLabel() {
+    const label = document.getElementById('price-range-label');
+    if (!label) return;
+    const minVal = priceMin ? parseFloat(priceMin.value) : NaN;
+    const maxVal = priceMax ? parseFloat(priceMax.value) : NaN;
+    const hasMin = !isNaN(minVal) && minVal >= 0;
+    const hasMax = !isNaN(maxVal) && maxVal >= 0;
+    if (hasMin && hasMax) label.textContent = `${formatINR(minVal)} — ${formatINR(maxVal)}`;
+    else if (hasMin) label.textContent = `From ${formatINR(minVal)}`;
+    else if (hasMax) label.textContent = `Up to ${formatINR(maxVal)}`;
+    else label.textContent = 'All prices';
+  }
+
+  // ---- Clear all filters (panel button + no-results state) ----
+  function clearAllFilters() {
+    const catSel = document.getElementById('category-select');
+    if (catSel) catSel.value = '';
+    const availSel = document.getElementById('availability-select');
+    if (availSel) availSel.value = '';
+    const discSel = document.getElementById('discount-select');
+    if (discSel) discSel.value = '';
+    if (priceMin) priceMin.value = '';
+    if (priceMax) priceMax.value = '';
+    if (searchInput) searchInput.value = '';
+    if (sortSelect) sortSelect.value = '';
+    updatePriceRangeLabel();
+    currentPage = 1;
+    applyShopFilters();
+  }
+
+  const clearFiltersBtn = document.getElementById('clear-filters-btn');
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', clearAllFilters);
   }
 
   // ---- Initial load ----
