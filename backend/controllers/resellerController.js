@@ -6,6 +6,18 @@ const asyncHandler = require('../utils/asyncHandler');
 const { paginationMeta } = require('../utils/paginate');
 const resellerService = require('../services/resellerService');
 
+/**
+ * Audit context derived from the backend-authenticated admin (req.admin).
+ * Frontend-supplied identity is never used for audit records.
+ */
+function auditContext(req) {
+  return {
+    actor: req.admin,
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent']
+  };
+}
+
 /* ============ ADMIN: RESELLER MANAGEMENT ============ */
 
 /**
@@ -41,7 +53,7 @@ const getReseller = asyncHandler(async (req, res) => {
  * PUT /api/admin/resellers/:id/activate
  */
 const activateReseller = asyncHandler(async (req, res) => {
-  const reseller = await resellerService.activateReseller(req.params.id, req.admin._id);
+  const reseller = await resellerService.activateReseller(req.params.id, req.admin._id, auditContext(req));
 
   res.json({
     success: true,
@@ -54,7 +66,7 @@ const activateReseller = asyncHandler(async (req, res) => {
  * PUT /api/admin/resellers/:id/deactivate
  */
 const deactivateReseller = asyncHandler(async (req, res) => {
-  const reseller = await resellerService.deactivateReseller(req.params.id);
+  const reseller = await resellerService.deactivateReseller(req.params.id, auditContext(req));
 
   res.json({
     success: true,

@@ -5,6 +5,7 @@
 const { Admin } = require('../models');
 const ApiError = require('../utils/ApiError');
 const { paginate } = require('../utils/paginate');
+const auditLogService = require('./auditLogService');
 
 /**
  * Build a safe admin response object.
@@ -62,7 +63,7 @@ async function listAdmins(query) {
 /**
  * Admin: Create a new admin user.
  */
-async function createAdmin(data) {
+async function createAdmin(data, auditCtx = {}) {
   // Check duplicate email
   const existing = await Admin.findOne({ email: data.email.toLowerCase() });
   if (existing) {
@@ -81,13 +82,28 @@ async function createAdmin(data) {
     status: data.status || 'active'
   });
 
+  // Phase 8 — audit record (best-effort; only after the create succeeded).
+  // The `data` payload contains the plain-text password, so we NEVER pass it
+  // here; only the safe public shape is persisted.
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'CREATE',
+    module: 'ADMIN_USER',
+    targetId: admin._id,
+    targetType: 'Admin',
+    description: `Admin user "${admin.email}" created with role ${admin.role}`,
+    newValues: toSafeAdmin(admin),
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
+
   return toSafeAdmin(admin);
 }
 
 /**
  * Admin: Update an admin user's status.
  */
-async function updateAdminStatus(adminId, status) {
+async function updateAdminStatus(adminId, status, auditCtx = {}) {
   if (!['active', 'inactive'].includes(status)) {
     throw new ApiError(400, 'Invalid status', ['status must be active or inactive']);
   }
@@ -97,8 +113,23 @@ async function updateAdminStatus(adminId, status) {
     throw new ApiError(404, 'Admin user not found', ['Admin does not exist']);
   }
 
+  const oldStatus = admin.status;
   admin.status = status;
   await admin.save();
+
+  // Phase 8 — audit record (best-effort; only after the update succeeded).
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'STATUS_CHANGE',
+    module: 'ADMIN_USER',
+    targetId: admin._id,
+    targetType: 'Admin',
+    description: `Admin user "${admin.email}" ${status === 'active' ? 'activated' : 'deactivated'}`,
+    oldValues: { status: oldStatus },
+    newValues: { status: admin.status },
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
 
   return toSafeAdmin(admin);
 }

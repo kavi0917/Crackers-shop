@@ -7,6 +7,18 @@ const asyncHandler = require('../utils/asyncHandler');
 const { paginationMeta } = require('../utils/paginate');
 
 /**
+ * Audit context derived from the backend-authenticated admin (req.admin).
+ * Frontend-supplied identity is never used for audit records.
+ */
+function auditContext(req) {
+  return {
+    actor: req.admin,
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent']
+  };
+}
+
+/**
  * GET /api/admin/customers
  * List customers with search, status filter, sorting, and pagination.
  */
@@ -59,7 +71,7 @@ const listCustomerOrders = asyncHandler(async (req, res) => {
  * Update a customer's account status.
  */
 const updateCustomerStatus = asyncHandler(async (req, res) => {
-  const customer = await adminCustomerService.updateCustomerStatus(req.params.id, req.body.status);
+  const customer = await adminCustomerService.updateCustomerStatus(req.params.id, req.body.status, auditContext(req));
 
   res.json({
     success: true,
@@ -73,7 +85,7 @@ const updateCustomerStatus = asyncHandler(async (req, res) => {
  * Update a customer's customer type (retail/wholesale).
  */
 const updateCustomerType = asyncHandler(async (req, res) => {
-  const customer = await adminCustomerService.updateCustomerType(req.params.id, req.body.customerType);
+  const customer = await adminCustomerService.updateCustomerType(req.params.id, req.body.customerType, auditContext(req));
 
   res.json({
     success: true,

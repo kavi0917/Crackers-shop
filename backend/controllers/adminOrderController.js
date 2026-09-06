@@ -7,6 +7,18 @@ const asyncHandler = require('../utils/asyncHandler');
 const { paginate, paginationMeta } = require('../utils/paginate');
 
 /**
+ * Audit context derived from the backend-authenticated admin (req.admin).
+ * Frontend-supplied identity is never used for audit records.
+ */
+function auditContext(req) {
+  return {
+    actor: req.admin,
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent']
+  };
+}
+
+/**
  * GET /api/admin/orders
  * List all orders with filters, search, and pagination.
  */
@@ -44,7 +56,7 @@ const getOrder = asyncHandler(async (req, res) => {
  * Update an order's status with transition validation.
  */
 const updateOrderStatus = asyncHandler(async (req, res) => {
-  const order = await adminOrderService.updateOrderStatus(req.params.id, req.body.status, req.admin._id);
+  const order = await adminOrderService.updateOrderStatus(req.params.id, req.body.status, req.admin._id, auditContext(req));
 
   res.json({
     success: true,

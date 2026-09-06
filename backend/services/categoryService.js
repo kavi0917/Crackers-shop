@@ -6,6 +6,23 @@ const { Category, Product } = require('../models');
 const ApiError = require('../utils/ApiError');
 const generateSlug = require('../utils/generateSlug');
 const calculateProductPricing = require('../utils/calculateProductPricing');
+const auditLogService = require('./auditLogService');
+
+/**
+ * Compact category snapshot used in audit records.
+ */
+function categoryAuditSnapshot(category) {
+  return {
+    id: category._id ? category._id.toString() : null,
+    name: category.name,
+    slug: category.slug,
+    description: category.description,
+    image: category.image,
+    status: category.status,
+    discount: category.discount,
+    productCount: category.productCount
+  };
+}
 
 /**
  * Get active categories (public).
@@ -74,7 +91,7 @@ async function getAllCategoriesAdmin() {
  * Admin: Create a new category.
  * Checks duplicate slug before saving.
  */
-async function createCategory({ name, description, image, status, discount }) {
+async function createCategory({ name, description, image, status, discount }, auditCtx = {}) {
   const slug = generateSlug(name);
 
   // Prevent duplicate slug
@@ -91,17 +108,31 @@ async function createCategory({ name, description, image, status, discount }) {
     discount: discount !== undefined ? discount : 0
   });
 
+  // Phase 8 — audit record (best-effort; only after the create succeeded).
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'CREATE',
+    module: 'CATEGORY',
+    targetId: category._id,
+    targetType: 'Category',
+    description: `Category "${category.name}" created`,
+    newValues: categoryAuditSnapshot(category),
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
+
   return category;
 }
 
 /**
  * Admin: Update a category.
  */
-async function updateCategory(id, { name, description, image, status, discount }) {
+async function updateCategory(id, { name, description, image, status, discount }, auditCtx = {}) {
   const category = await Category.findById(id);
   if (!category) {
     throw new ApiError(404, 'Category not found', ['Category does not exist']);
   }
+  const oldSnapshot = categoryAuditSnapshot(category);
 
   if (name && name !== category.name) {
     const newSlug = generateSlug(name);
@@ -119,6 +150,24 @@ async function updateCategory(id, { name, description, image, status, discount }
   if (discount !== undefined) category.discount = discount;
 
   await category.save();
+
+  // Phase 8 — audit record for UPDATE (best-effort; only after the update succeeded).
+  const newSnapshot = categoryAuditSnapshot(category);
+  if (JSON.stringify({ ...oldSnapshot, id: null }) !== JSON.stringify({ ...newSnapshot, id: null })) {
+    await auditLogService.createAuditLog({
+      actor: auditCtx.actor,
+      action: 'UPDATE',
+      module: 'CATEGORY',
+      targetId: category._id,
+      targetType: 'Category',
+      description: `Category "${category.name}" updated`,
+      oldValues: oldSnapshot,
+      newValues: newSnapshot,
+      ipAddress: auditCtx.ipAddress,
+      userAgent: auditCtx.userAgent
+    });
+  }
+
   return category;
 }
 
@@ -126,11 +175,12 @@ async function updateCategory(id, { name, description, image, status, discount }
  * Admin: Delete/deactivate a category.
  * Prefers deactivation over destructive deletion when products exist.
  */
-async function deleteCategory(id) {
+async function deleteCategory(id, auditCtx = {}) {
   const category = await Category.findById(id);
   if (!category) {
     throw new ApiError(404, 'Category not found', ['Category does not exist']);
   }
+  const oldSnapshot = categoryAuditSnapshot(category);
 
   // Count active products in this category
   const activeProductCount = await Product.countDocuments({ category: id, status: 'active' });
@@ -139,11 +189,40 @@ async function deleteCategory(id) {
     // Prefer deactivation over destructive deletion
     category.status = 'inactive';
     await category.save();
+
+    // Phase 8 — audit the deactivation as a STATUS_CHANGE (best-effort).
+    await auditLogService.createAuditLog({
+      actor: auditCtx.actor,
+      action: 'STATUS_CHANGE',
+      module: 'CATEGORY',
+      targetId: category._id,
+      targetType: 'Category',
+      description: `Category "${category.name}" deactivated (has active products)`,
+      oldValues: { status: oldSnapshot.status },
+      newValues: { status: category.status },
+      ipAddress: auditCtx.ipAddress,
+      userAgent: auditCtx.userAgent
+    });
+
     return { deleted: false, deactivated: true, message: 'Category has active products. It was deactivated instead of deleted.' };
   }
 
   // No active products — safe to delete
   await Category.findByIdAndDelete(id);
+
+  // Phase 8 — audit the deletion (best-effort; only after the delete succeeded).
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'DELETE',
+    module: 'CATEGORY',
+    targetId: category._id,
+    targetType: 'Category',
+    description: `Category "${category.name}" deleted`,
+    oldValues: oldSnapshot,
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
+
   return { deleted: true, deactivated: false, message: 'Category deleted successfully' };
 }
 

@@ -7,6 +7,19 @@ const asyncHandler = require('../utils/asyncHandler');
 const { paginate, paginationMeta } = require('../utils/paginate');
 
 /**
+ * Build the audit context from the authenticated admin + request.
+ * The actor is ALWAYS the backend-authenticated admin (req.admin) —
+ * never a value supplied by the frontend.
+ */
+function auditContext(req) {
+  return {
+    actor: req.admin,
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent']
+  };
+}
+
+/**
  * GET /api/products
  * List products with filters, sorting, and pagination.
  * Query params: page, limit, search, category, minPrice, maxPrice,
@@ -112,7 +125,7 @@ const createProduct = asyncHandler(async (req, res) => {
   if (req.file) {
     data.images = [`/uploads/${req.file.filename}`];
   }
-  const product = await productService.createProduct(data);
+  const product = await productService.createProduct(data, auditContext(req));
 
   res.status(201).json({
     success: true,
@@ -130,7 +143,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   if (req.file) {
     data.images = [`/uploads/${req.file.filename}`];
   }
-  const product = await productService.updateProduct(req.params.id, data);
+  const product = await productService.updateProduct(req.params.id, data, auditContext(req));
 
   res.json({
     success: true,
@@ -147,7 +160,7 @@ const updateProduct = asyncHandler(async (req, res) => {
  * history, inventory audit logs) are NEVER cascade-deleted.
  */
 const deleteProduct = asyncHandler(async (req, res) => {
-  const result = await productService.deleteProduct(req.params.id);
+  const result = await productService.deleteProduct(req.params.id, auditContext(req));
 
   res.json({
     success: true,

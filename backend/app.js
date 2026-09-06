@@ -160,6 +160,9 @@ app.use('/api/admin/contact-messages', require('./routes/adminContact'));
 // Phase 8 — Admin Settings
 app.use('/api/admin/settings', require('./routes/adminSettings'));
 
+// Phase 8 — Admin Audit Log (read-only immutable audit trail)
+app.use('/api/admin/audit-logs', require('./routes/adminAuditLogs'));
+
 // Public settings — used by customer-facing pages (e.g. freeDeliveryThreshold)
 app.use('/api/settings', require('./routes/settings'));
 

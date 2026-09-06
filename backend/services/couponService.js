@@ -8,6 +8,25 @@
 
 const { Coupon } = require('../models');
 const ApiError = require('../utils/ApiError');
+const auditLogService = require('./auditLogService');
+
+/**
+ * Compact coupon snapshot used in audit records.
+ */
+function couponAuditSnapshot(coupon) {
+  return {
+    id: coupon._id ? coupon._id.toString() : null,
+    code: coupon.code,
+    discountType: coupon.discountType,
+    discountValue: coupon.discountValue,
+    minimumOrderAmount: coupon.minimumOrderAmount,
+    maximumDiscount: coupon.maximumDiscount,
+    startDate: coupon.startDate,
+    expiryDate: coupon.expiryDate,
+    usageLimit: coupon.usageLimit,
+    status: coupon.status
+  };
+}
 
 /**
  * Normalize a coupon code for storage/lookup: trimmed + UPPERCASE.
@@ -208,7 +227,7 @@ function assertValidDates(startDate, expiryDate) {
 /**
  * Admin: create a coupon from validated fields.
  */
-async function createCoupon(data) {
+async function createCoupon(data, auditCtx = {}) {
   const code = normalizeCouponCode(data.code);
   if (!code) {
     throw new ApiError(400, 'Coupon code is required', ['Coupon code is required']);
@@ -239,6 +258,19 @@ async function createCoupon(data) {
     status: data.status || 'active'
   });
 
+  // Phase 8 — audit record (best-effort; only after the create succeeded).
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'CREATE',
+    module: 'COUPON',
+    targetId: coupon._id,
+    targetType: 'Coupon',
+    description: `Coupon "${coupon.code}" created`,
+    newValues: couponAuditSnapshot(coupon),
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
+
   return coupon;
 }
 
@@ -246,11 +278,12 @@ async function createCoupon(data) {
  * Admin: update an existing coupon.
  * Fields are updated only when explicitly present in the payload.
  */
-async function updateCoupon(id, data) {
+async function updateCoupon(id, data, auditCtx = {}) {
   const coupon = await Coupon.findById(id);
   if (!coupon) {
     throw new ApiError(404, 'Coupon not found', ['Coupon does not exist']);
   }
+  const oldSnapshot = couponAuditSnapshot(coupon);
 
   if (data.code !== undefined && data.code !== null) {
     const code = normalizeCouponCode(data.code);
@@ -291,6 +324,28 @@ async function updateCoupon(id, data) {
   if (data.status !== undefined) coupon.status = data.status;
 
   await coupon.save();
+
+  // Phase 8 — audit record for UPDATE (best-effort; only after the update succeeded).
+  // Covers regular edits and activate/deactivate (status) toggles alike.
+  const newSnapshot = couponAuditSnapshot(coupon);
+  if (JSON.stringify({ ...oldSnapshot, id: null }) !== JSON.stringify({ ...newSnapshot, id: null })) {
+    const statusChanged = oldSnapshot.status !== newSnapshot.status;
+    await auditLogService.createAuditLog({
+      actor: auditCtx.actor,
+      action: statusChanged ? 'STATUS_CHANGE' : 'UPDATE',
+      module: 'COUPON',
+      targetId: coupon._id,
+      targetType: 'Coupon',
+      description: statusChanged
+        ? `Coupon "${coupon.code}" ${newSnapshot.status === 'active' ? 'activated' : 'deactivated'}`
+        : `Coupon "${coupon.code}" updated`,
+      oldValues: oldSnapshot,
+      newValues: newSnapshot,
+      ipAddress: auditCtx.ipAddress,
+      userAgent: auditCtx.userAgent
+    });
+  }
+
   return coupon;
 }
 
@@ -299,9 +354,24 @@ async function updateCoupon(id, data) {
  * Safe to hard-delete: historical orders snapshot the coupon code string on the
  * Order document, so deleting a coupon cannot alter past orders.
  */
-async function deleteCoupon(id) {
-  await getCouponById(id);
+async function deleteCoupon(id, auditCtx = {}) {
+  const coupon = await getCouponById(id);
+  const oldSnapshot = couponAuditSnapshot(coupon);
   await Coupon.findByIdAndDelete(id);
+
+  // Phase 8 — audit record for DELETE (best-effort; only after the delete succeeded).
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'DELETE',
+    module: 'COUPON',
+    targetId: coupon._id,
+    targetType: 'Coupon',
+    description: `Coupon "${coupon.code}" deleted`,
+    oldValues: oldSnapshot,
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
+
   return { deleted: true, message: 'Coupon deleted successfully' };
 }
 

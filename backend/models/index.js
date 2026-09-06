@@ -16,6 +16,7 @@ const InventoryTransaction = require('./InventoryTransaction');
 const Commission = require('./Commission');
 const Wishlist = require('./Wishlist');
 const Coupon = require('./Coupon');
+const AuditLog = require('./AuditLog');
 
 module.exports = {
   User,
@@ -31,5 +32,6 @@ module.exports = {
   InventoryTransaction,
   Commission,
   Wishlist,
-  Coupon
+  Coupon,
+  AuditLog
 };

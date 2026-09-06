@@ -4,6 +4,7 @@
 
 const { Setting } = require('../models');
 const ApiError = require('../utils/ApiError');
+const auditLogService = require('./auditLogService');
 
 /**
  * Default Contact Details values.
@@ -277,15 +278,54 @@ async function getSettingsAdmin() {
 
 /**
  * Admin: Update settings.
+ * Phase 8 — also records an audit entry for meaningful settings changes.
  */
-async function updateSettings(data) {
+async function updateSettings(data, auditCtx = {}) {
   const settings = await Setting.getSettings();
   const update = normalizeSettings(data);
+
+  // Capture only the values actually being changed for the old-values snapshot.
+  const oldValues = {};
+  const newValues = {};
+  Object.keys(update).forEach((key) => {
+    oldValues[key] = settings[key] !== undefined ? settings[key] : null;
+    newValues[key] = update[key];
+  });
 
   Object.assign(settings, update);
   await settings.save();
 
-  return getSettings();
+  const after = await getSettings();
+
+  // Phase 8 — audit record (best-effort; only after the save succeeded).
+  // Only meaningful differences are logged (no-op saves create no record).
+  if (Object.keys(update).length > 0) {
+    const changedKeys = Object.keys(newValues).filter(
+      (key) => JSON.stringify(oldValues[key]) !== JSON.stringify(newValues[key])
+    );
+    if (changedKeys.length > 0) {
+      const changedOld = {};
+      const changedNew = {};
+      changedKeys.forEach((key) => {
+        changedOld[key] = oldValues[key];
+        changedNew[key] = newValues[key];
+      });
+      await auditLogService.createAuditLog({
+        actor: auditCtx.actor,
+        action: 'UPDATE',
+        module: 'SETTINGS',
+        targetId: settings._id || null,
+        targetType: 'Setting',
+        description: `Shop settings updated (${changedKeys.join(', ')})`,
+        oldValues: changedOld,
+        newValues: changedNew,
+        ipAddress: auditCtx.ipAddress,
+        userAgent: auditCtx.userAgent
+      });
+    }
+  }
+
+  return after;
 }
 
 module.exports = {

@@ -7,6 +7,7 @@ const ApiError = require('../utils/ApiError');
 const { paginate } = require('../utils/paginate');
 const { getMembershipTier } = require('../utils/membership');
 const { COMPLETED_ORDER_STATUS } = require('../utils/secondOrderDiscount');
+const auditLogService = require('./auditLogService');
 
 /**
  * Build a safe customer response object.
@@ -198,7 +199,7 @@ async function listCustomerOrders(customerId, query) {
 /**
  * Admin: Update a customer's account status (active/inactive).
  */
-async function updateCustomerStatus(customerId, status) {
+async function updateCustomerStatus(customerId, status, auditCtx = {}) {
   if (!['active', 'inactive'].includes(status)) {
     throw new ApiError(400, 'Invalid status', ['status must be active or inactive']);
   }
@@ -208,8 +209,23 @@ async function updateCustomerStatus(customerId, status) {
     throw new ApiError(404, 'Customer not found', ['Customer does not exist']);
   }
 
+  const oldStatus = user.status;
   user.status = status;
   await user.save();
+
+  // Phase 8 — audit record (best-effort; only after the update succeeded).
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'STATUS_CHANGE',
+    module: 'CUSTOMER',
+    targetId: user._id,
+    targetType: 'User',
+    description: `Customer "${user.name}" ${status === 'active' ? 'activated' : 'deactivated'}`,
+    oldValues: { status: oldStatus },
+    newValues: { status: user.status },
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
 
   return toSafeCustomer(user);
 }
@@ -218,7 +234,7 @@ async function updateCustomerStatus(customerId, status) {
  * Admin: Update a customer's customer type (retail/wholesale).
  * This does NOT modify historical orders — they remain immutable pricing snapshots.
  */
-async function updateCustomerType(customerId, customerType) {
+async function updateCustomerType(customerId, customerType, auditCtx = {}) {
   if (!['retail', 'wholesale'].includes(customerType)) {
     throw new ApiError(400, 'Invalid customer type', ['customerType must be retail or wholesale']);
   }
@@ -228,8 +244,23 @@ async function updateCustomerType(customerId, customerType) {
     throw new ApiError(404, 'Customer not found', ['Customer does not exist']);
   }
 
+  const oldType = user.customerType || 'retail';
   user.customerType = customerType;
   await user.save();
+
+  // Phase 8 — audit record (best-effort; only after the update succeeded).
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'UPDATE',
+    module: 'CUSTOMER',
+    targetId: user._id,
+    targetType: 'User',
+    description: `Customer "${user.name}" type changed from ${oldType} to ${customerType}`,
+    oldValues: { customerType: oldType },
+    newValues: { customerType: user.customerType },
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
 
   return toSafeCustomer(user);
 }

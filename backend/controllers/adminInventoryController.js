@@ -7,6 +7,18 @@ const asyncHandler = require('../utils/asyncHandler');
 const { paginate, paginationMeta } = require('../utils/paginate');
 
 /**
+ * Audit context derived from the backend-authenticated admin (req.admin).
+ * Frontend-supplied identity is never used for audit records.
+ */
+function auditContext(req) {
+  return {
+    actor: req.admin,
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent']
+  };
+}
+
+/**
  * GET /api/admin/inventory
  * List inventory with search, filters, and pagination.
  */
@@ -58,7 +70,7 @@ const listOutOfStock = asyncHandler(async (req, res) => {
  * Update stock for a product.
  */
 const updateStock = asyncHandler(async (req, res) => {
-  const product = await adminInventoryService.updateStock(req.params.productId, req.body, req.admin._id);
+  const product = await adminInventoryService.updateStock(req.params.productId, req.body, req.admin._id, auditContext(req));
 
   res.json({
     success: true,

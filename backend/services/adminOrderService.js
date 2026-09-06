@@ -7,6 +7,7 @@ const ApiError = require('../utils/ApiError');
 const { canTransition } = require('./checkoutService');
 const { withTransaction } = require('../utils/withTransaction');
 const { handleCommissionForOrderStatus } = require('./resellerService');
+const auditLogService = require('./auditLogService');
 
 /**
  * List all orders with filters, search, and pagination.
@@ -85,11 +86,12 @@ async function getOrderById(orderId) {
  * Update an order's status with transition validation.
  * When cancelling, restores stock exactly once.
  */
-async function updateOrderStatus(orderId, newStatus, adminId) {
+async function updateOrderStatus(orderId, newStatus, adminId, auditCtx = {}) {
   const order = await Order.findById(orderId);
   if (!order) {
     throw new ApiError(404, 'Order not found', ['Order does not exist']);
   }
+  const previousStatus = order.status;
 
   // No-op if same status
   if (order.status === newStatus) {
@@ -163,6 +165,22 @@ async function updateOrderStatus(orderId, newStatus, adminId) {
     // Only `delivered` creates an earned commission; `cancelled` reverses any
     // previously earned commission (without altering historical amounts).
     await handleCommissionForOrderStatus(lockedOrder._id, newStatus, sessionOpt);
+
+    // Phase 8 — audit record created INSIDE the same transaction/session as
+    // the status change so both commit or roll back together.
+    await auditLogService.createAuditLog({
+      actor: auditCtx.actor,
+      action: 'STATUS_CHANGE',
+      module: 'ORDER',
+      targetId: lockedOrder._id,
+      targetType: 'Order',
+      description: `Order ${lockedOrder.orderId} status changed from ${previousStatus} to ${newStatus}`,
+      oldValues: { status: previousStatus },
+      newValues: { status: newStatus },
+      ipAddress: auditCtx.ipAddress,
+      userAgent: auditCtx.userAgent,
+      sessionOpt
+    });
 
     return lockedOrder;
   });

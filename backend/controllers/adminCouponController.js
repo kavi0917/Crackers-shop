@@ -6,6 +6,18 @@ const couponService = require('../services/couponService');
 const asyncHandler = require('../utils/asyncHandler');
 
 /**
+ * Audit context derived from the backend-authenticated admin (req.admin).
+ * Frontend-supplied identity is never used for audit records.
+ */
+function auditContext(req) {
+  return {
+    actor: req.admin,
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent']
+  };
+}
+
+/**
  * GET /api/admin/coupons
  * List all coupons (including inactive). Optional `q` search + `status` filter.
  */
@@ -38,7 +50,7 @@ const getCoupon = asyncHandler(async (req, res) => {
  * Create a new coupon.
  */
 const createCoupon = asyncHandler(async (req, res) => {
-  const coupon = await couponService.createCoupon(req.body);
+  const coupon = await couponService.createCoupon(req.body, auditContext(req));
 
   res.status(201).json({
     success: true,
@@ -52,7 +64,7 @@ const createCoupon = asyncHandler(async (req, res) => {
  * Update an existing coupon (including activate/deactivate via `status`).
  */
 const updateCoupon = asyncHandler(async (req, res) => {
-  const coupon = await couponService.updateCoupon(req.params.id, req.body);
+  const coupon = await couponService.updateCoupon(req.params.id, req.body, auditContext(req));
 
   res.json({
     success: true,
@@ -66,7 +78,7 @@ const updateCoupon = asyncHandler(async (req, res) => {
  * Delete a coupon.
  */
 const deleteCoupon = asyncHandler(async (req, res) => {
-  const result = await couponService.deleteCoupon(req.params.id);
+  const result = await couponService.deleteCoupon(req.params.id, auditContext(req));
 
   res.json({
     success: true,

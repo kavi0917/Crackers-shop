@@ -517,6 +517,14 @@ const AdminAPI = {
     create: (data) => apiRequest('/admin/coupons', { method: 'POST', body: data, admin: true }),
     update: (id, data) => apiRequest(`/admin/coupons/${id}`, { method: 'PUT', body: data, admin: true }),
     remove: (id) => apiRequest(`/admin/coupons/${id}`, { method: 'DELETE', admin: true })
+  },
+  /* ---------- Phase 8 — Admin Audit Logs (read-only) ---------- */
+  auditLogs: {
+    list: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return apiRequest(`/admin/audit-logs${qs ? `?${qs}` : ''}`, { admin: true });
+    },
+    get: (id) => apiRequest(`/admin/audit-logs/${id}`, { admin: true })
   }
 };
 

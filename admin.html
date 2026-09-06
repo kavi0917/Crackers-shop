@@ -30,6 +30,7 @@
         <a href="#" data-admin-section="commissions"><i class="fas fa-file-invoice-dollar"></i> Commissions</a>
         <a href="#" data-admin-section="inventory"><i class="fas fa-warehouse"></i> Inventory</a>
         <a href="#" data-admin-section="coupons"><i class="fas fa-ticket-alt"></i> Coupons</a>
+        <a href="#" data-admin-section="audit-logs"><i class="fas fa-history"></i> Audit Logs</a>
         <div class="nav-section">Insights</div>
         <a href="#" data-admin-section="reports"><i class="fas fa-chart-line"></i> Sales Reports</a>
         <a href="#" data-admin-section="reviews"><i class="fas fa-star"></i> Reviews</a>
@@ -880,6 +881,63 @@
         </div>
       </div>
 
+      <!-- ============ AUDIT LOGS SECTION (Phase 8) ============ -->
+      <div class="admin-section" id="admin-audit-logs" style="display:none;">
+        <div class="admin-card">
+          <h3>Audit Logs</h3>
+          <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+            <input type="text" id="audit-log-search" class="form-control" placeholder="Search description, admin, target..." style="max-width:320px;">
+            <select id="audit-log-module" class="form-control" style="max-width:180px;">
+              <option value="">All Modules</option>
+              <option value="PRODUCT">Product</option>
+              <option value="CATEGORY">Category</option>
+              <option value="ORDER">Order</option>
+              <option value="CUSTOMER">Customer</option>
+              <option value="COUPON">Coupon</option>
+              <option value="INVENTORY">Inventory</option>
+              <option value="SETTINGS">Settings</option>
+              <option value="RESELLER">Reseller</option>
+              <option value="AUTH">Auth</option>
+              <option value="ADMIN_USER">Admin User</option>
+            </select>
+            <select id="audit-log-action" class="form-control" style="max-width:180px;">
+              <option value="">All Actions</option>
+              <option value="CREATE">Create</option>
+              <option value="UPDATE">Update</option>
+              <option value="DELETE">Delete</option>
+              <option value="STATUS_CHANGE">Status Change</option>
+              <option value="ACTIVATE">Activate</option>
+              <option value="DEACTIVATE">Deactivate</option>
+              <option value="LOGIN">Login</option>
+            </select>
+            <input type="date" id="audit-log-from" class="form-control" style="max-width:170px;" title="From date">
+            <span style="align-self:center; color:var(--text-muted);">to</span>
+            <input type="date" id="audit-log-to" class="form-control" style="max-width:170px;" title="To date">
+            <button class="btn btn-ghost btn-sm" id="audit-log-filter-clear"><i class="fas fa-times"></i> Clear</button>
+            <span id="audit-log-count" style="align-self:center; font-size:0.8rem; color:var(--text-muted); margin-left:auto;"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date/Time</th>
+                  <th>Admin/User</th>
+                  <th>Action</th>
+                  <th>Module</th>
+                  <th>Target</th>
+                  <th>Description</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Loading audit logs...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="audit-log-pagination" class="pagination" style="margin-top:var(--space-5);"></div>
+        </div>
+      </div>
+
       <!-- ============ SETTINGS SECTION ============ -->
       <div class="admin-section" id="admin-settings" style="display:none;">
         <div class="admin-card">
@@ -1204,6 +1262,33 @@
     </div>
   </div>
 
+  <!-- ============ AUDIT LOG DETAIL MODAL (Phase 8) ============ -->
+  <div class="modal-overlay" id="audit-log-detail-modal">
+    <div class="modal" style="max-width:720px;">
+      <div class="modal-header">
+        <h3>Audit Log Details</h3>
+        <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+      </div>
+      <div id="audit-log-detail-body" style="display:grid; gap:10px; font-size:0.85rem; max-height:60vh; overflow-y:auto; padding-right:4px;">
+        <div style="display:grid; grid-template-columns:180px 1fr; gap:8px 16px; align-items:start;">
+          <span style="color:var(--text-muted);">Date/Time</span><b id="ald-time"></b>
+          <span style="color:var(--text-muted);">Admin/User</span><b id="ald-actor"></b>
+          <span style="color:var(--text-muted);">Action</span><b id="ald-action"></b>
+          <span style="color:var(--text-muted);">Module</span><b id="ald-module"></b>
+          <span style="color:var(--text-muted);">Target</span><span id="ald-target"></span>
+          <span style="color:var(--text-muted);">Description</span><span id="ald-desc"></span>
+          <span style="color:var(--text-muted);">IP Address</span><span id="ald-ip" style="font-family:monospace;"></span>
+        </div>
+        <div style="margin-top:4px;"><span style="color:var(--text-muted);">Old Values</span><pre id="ald-old" class="audit-json-block"></pre></div>
+        <div><span style="color:var(--text-muted);">New Values</span><pre id="ald-new" class="audit-json-block"></pre></div>
+        <div><span style="color:var(--text-muted);">Metadata</span><pre id="ald-meta" class="audit-json-block"></pre></div>
+      </div>
+      <div style="margin-top:16px; text-align:right;">
+        <button class="btn btn-ghost" data-modal-close>Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ COMBO MODAL (Admin) ============ -->
   <div class="modal-overlay" id="combo-modal">
     <div class="modal" style="max-width:640px;">
@@ -1361,7 +1446,8 @@
           orders: 'Orders', customers: 'Customers', inventory: 'Inventory',
           reports: 'Sales Reports', reviews: 'Reviews', contact: 'Contact Messages',
           combos: 'Combos', 'contact-details': 'Contact Details', settings: 'Settings',
-          resellers: 'Resellers', commissions: 'Commissions', coupons: 'Coupons'
+          resellers: 'Resellers', commissions: 'Commissions', coupons: 'Coupons',
+          'audit-logs': 'Audit Logs'
         };
         const titleEl = document.getElementById('admin-page-title');
         if (titleEl) titleEl.textContent = titles[section] || 'Dashboard';

@@ -17,6 +17,7 @@ const {
   calculateCommission,
   RESELLER_COMMISSION_PERCENT
 } = require('../utils/reseller');
+const auditLogService = require('./auditLogService');
 
 /* ---------- Safe customer shape for admin/reseller views ---------- */
 function toSafeResellerView(reseller) {
@@ -200,7 +201,7 @@ async function listEligibleCustomers(query) {
  * - Generates a unique referral code.
  * - Sets isReseller = true and resellerStatus = active.
  */
-async function activateReseller(customerId, adminId) {
+async function activateReseller(customerId, adminId, auditCtx = {}) {
   const user = await User.findById(customerId);
   if (!user) {
     throw new ApiError(404, 'Customer not found', ['Customer does not exist']);
@@ -214,6 +215,8 @@ async function activateReseller(customerId, adminId) {
     return toSafeResellerView(user);
   }
 
+  const oldSnapshot = toSafeResellerView(user);
+
   // Generate a unique referral code (backend-authoritative)
   const referralCode = await generateUniqueReferralCode();
 
@@ -222,7 +225,20 @@ async function activateReseller(customerId, adminId) {
   user.referralCode = referralCode;
   await user.save();
 
-  // Audit: commission records reference the admin that activated (tracked implicitly via user save)
+  // Phase 8 — audit record (best-effort; only after the activation succeeded).
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'ACTIVATE',
+    module: 'RESELLER',
+    targetId: user._id,
+    targetType: 'User',
+    description: `Reseller "${user.name}" activated with referral code ${referralCode}`,
+    oldValues: { isReseller: oldSnapshot.isReseller, resellerStatus: oldSnapshot.resellerStatus },
+    newValues: { isReseller: true, resellerStatus: RESELLER_STATUS.ACTIVE, referralCode },
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
+
   return toSafeResellerView(user);
 }
 
@@ -232,7 +248,7 @@ async function activateReseller(customerId, adminId) {
  * - Future referral usage is disabled (getActiveCustomerReferral returns false).
  * - Existing referred customers are NOT reassigned.
  */
-async function deactivateReseller(customerId) {
+async function deactivateReseller(customerId, auditCtx = {}) {
   const user = await User.findById(customerId);
   if (!user) {
     throw new ApiError(404, 'Customer not found', ['Customer does not exist']);
@@ -241,8 +257,23 @@ async function deactivateReseller(customerId) {
     throw new ApiError(400, 'This customer is not a reseller.', ['Not a reseller']);
   }
 
+  const oldSnapshot = toSafeResellerView(user);
   user.resellerStatus = RESELLER_STATUS.INACTIVE;
   await user.save();
+
+  // Phase 8 — audit record (best-effort; only after the deactivation succeeded).
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'DEACTIVATE',
+    module: 'RESELLER',
+    targetId: user._id,
+    targetType: 'User',
+    description: `Reseller "${user.name}" deactivated`,
+    oldValues: { isReseller: oldSnapshot.isReseller, resellerStatus: oldSnapshot.resellerStatus },
+    newValues: { isReseller: user.isReseller, resellerStatus: user.resellerStatus },
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
 
   return toSafeResellerView(user);
 }

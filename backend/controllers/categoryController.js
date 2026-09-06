@@ -7,6 +7,18 @@ const asyncHandler = require('../utils/asyncHandler');
 const { paginate, paginationMeta } = require('../utils/paginate');
 
 /**
+ * Audit context derived from the backend-authenticated admin (req.admin).
+ * Frontend-supplied identity is never used.
+ */
+function auditContext(req) {
+  return {
+    actor: req.admin,
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent']
+  };
+}
+
+/**
  * GET /api/categories
  * Return all active categories.
  */
@@ -74,7 +86,7 @@ const getAllCategoriesAdmin = asyncHandler(async (req, res) => {
 const createCategory = asyncHandler(async (req, res) => {
   const { name, description, image, status, discount } = req.body;
 
-  const category = await categoryService.createCategory({ name, description, image, status, discount });
+  const category = await categoryService.createCategory({ name, description, image, status, discount }, auditContext(req));
 
   res.status(201).json({
     success: true,
@@ -90,7 +102,7 @@ const createCategory = asyncHandler(async (req, res) => {
 const updateCategory = asyncHandler(async (req, res) => {
   const { name, description, image, status, discount } = req.body;
 
-  const category = await categoryService.updateCategory(req.params.id, { name, description, image, status, discount });
+  const category = await categoryService.updateCategory(req.params.id, { name, description, image, status, discount }, auditContext(req));
 
   res.json({
     success: true,
@@ -104,7 +116,7 @@ const updateCategory = asyncHandler(async (req, res) => {
  * Delete/deactivate a category.
  */
 const deleteCategory = asyncHandler(async (req, res) => {
-  const result = await categoryService.deleteCategory(req.params.id);
+  const result = await categoryService.deleteCategory(req.params.id, auditContext(req));
 
   res.json({
     success: true,

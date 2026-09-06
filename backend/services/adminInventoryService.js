@@ -6,6 +6,7 @@ const Product = require('../models/Product');
 const InventoryTransaction = require('../models/InventoryTransaction');
 const ApiError = require('../utils/ApiError');
 const { getLowStockThreshold, buildLowStockFilter } = require('../utils/lowStock');
+const auditLogService = require('./auditLogService');
 
 /**
  * Compute the Inventory table Stock Status from stock and the GLOBAL
@@ -154,7 +155,7 @@ async function listOutOfStock() {
  * Update stock (and optionally reorderLevel) for a product.
  * Records an inventory transaction.
  */
-async function updateStock(productId, { stock, reorderLevel }, adminId) {
+async function updateStock(productId, { stock, reorderLevel }, adminId, auditCtx = {}) {
   const product = await Product.findById(productId);
   if (!product) {
     throw new ApiError(404, 'Product not found', ['Product does not exist']);
@@ -163,6 +164,7 @@ async function updateStock(productId, { stock, reorderLevel }, adminId) {
   const update = {};
   let changeAmount = 0;
   let previousStock = product.stock;
+  const previousReorderLevel = product.reorderLevel;
 
   if (stock !== undefined) {
     const qty = parseInt(stock, 10);
@@ -203,6 +205,31 @@ async function updateStock(productId, { stock, reorderLevel }, adminId) {
       note: 'Manual stock adjustment by admin'
     });
   }
+
+  // Phase 8 — audit record for the inventory adjustment (best-effort; only after
+  // the primary update succeeded).
+  const oldValues = {};
+  const newValues = {};
+  if (stock !== undefined && changeAmount !== 0) {
+    oldValues.stock = previousStock;
+    newValues.stock = updatedProduct.stock;
+  }
+  if (reorderLevel !== undefined) {
+    oldValues.reorderLevel = previousReorderLevel;
+    newValues.reorderLevel = updatedProduct.reorderLevel;
+  }
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'UPDATE',
+    module: 'INVENTORY',
+    targetId: productId,
+    targetType: 'Product',
+    description: `Inventory adjusted for "${updatedProduct.name}" (stock ${oldValues.stock !== undefined ? oldValues.stock : 'unchanged'} → ${newValues.stock !== undefined ? newValues.stock : 'unchanged'})`,
+    oldValues,
+    newValues,
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
 
   return updatedProduct;
 }

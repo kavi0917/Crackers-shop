@@ -5946,6 +5946,256 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+/* ============ ADMIN AUDIT LOGS (Phase 8) ============ */
+/* Read-only audit trail. Filters are sent to the backend; results are
+   paginated server-side. Details are shown in a modal via GET /:id. */
+let adminAuditLogsState = { page: 1, limit: 25 };
+
+function auditLogPill(action) {
+  const map = {
+    CREATE: 'badge badge-success',
+    UPDATE: 'badge badge-info',
+    STATUS_CHANGE: 'badge badge-warning',
+    DELETE: 'badge badge-danger',
+    LOGIN: 'badge badge-info',
+    LOGOUT: 'badge badge-muted',
+    ACTIVATE: 'badge badge-success',
+    DEACTIVATE: 'badge badge-muted'
+  };
+  return '<span class="' + (map[action] || 'badge') + '">' + escapeHTML(String(action || '')) + '</span>';
+}
+
+function auditModuleLabel(module) {
+  const map = {
+    PRODUCT: 'Product', CATEGORY: 'Category', ORDER: 'Order', CUSTOMER: 'Customer',
+    COUPON: 'Coupon', INVENTORY: 'Inventory', SETTINGS: 'Settings', RESELLER: 'Reseller',
+    AUTH: 'Auth', ADMIN_USER: 'Admin User', OTHER: 'Other'
+  };
+  return map[module] || escapeHTML(String(module || ''));
+}
+
+function auditTargetText(log) {
+  if (!log) return '—';
+  const type = log.targetType || '';
+  const id = log.targetId || '';
+  return escapeHTML(type) + (id ? ' <code style="font-size:0.72rem;">' + escapeHTML(String(id).slice(-6)) + '</code>' : '');
+}
+async function loadAdminAuditLogs() {
+  const tbody = document.querySelector('#admin-audit-logs .data-table tbody');
+  const countEl = document.getElementById('audit-log-count');
+  const paginationEl = document.getElementById('audit-log-pagination');
+  if (!tbody) return;
+
+  const params = { page: adminAuditLogsState.page, limit: adminAuditLogsState.limit };
+  const search = (document.getElementById('audit-log-search') || {}).value || '';
+  const module = (document.getElementById('audit-log-module') || {}).value || '';
+  const action = (document.getElementById('audit-log-action') || {}).value || '';
+  const from = (document.getElementById('audit-log-from') || {}).value || '';
+  const to = (document.getElementById('audit-log-to') || {}).value || '';
+  if (search.trim()) params.search = search.trim();
+  if (module) params.module = module;
+  if (action) params.action = action;
+  if (from) params.startDate = from;
+  if (to) params.endDate = to;
+
+  try {
+    const data = await AdminAPI.auditLogs.list(params);
+    const logs = (data && data.auditLogs) || [];
+    const pagination = (data && data.pagination) || { total: 0, page: 1, totalPages: 1 };
+
+    tbody.textContent = '';
+    if (logs.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 7;
+      td.style.textAlign = 'center';
+      td.style.color = 'var(--text-muted)';
+      td.textContent = 'No audit logs found';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    } else {
+      logs.forEach((log) => {
+        const tr = document.createElement('tr');
+        const tdTime = document.createElement('td');
+        tdTime.textContent = formatDateTime(log.createdAt);
+        const tdActor = document.createElement('td');
+        if (log.actorName && log.actorEmail) {
+          tdActor.innerHTML = escapeHTML(log.actorName) + '<div style="font-size:0.72rem; color:var(--text-muted);">' + escapeHTML(log.actorEmail) + '</div>';
+        } else {
+          tdActor.textContent = log.actorName || log.actorEmail || 'Admin';
+        }
+        const tdAction = document.createElement('td');
+        tdAction.innerHTML = auditLogPill(log.action);
+        const tdModule = document.createElement('td');
+        tdModule.textContent = auditModuleLabel(log.module);
+        const tdTarget = document.createElement('td');
+        tdTarget.innerHTML = auditTargetText(log);
+        const tdDesc = document.createElement('td');
+        tdDesc.textContent = log.description || '';
+        tdDesc.style.maxWidth = '320px';
+        tdDesc.style.minWidth = '180px';
+        const tdDetails = document.createElement('td');
+        const viewBtn = document.createElement('button');
+        viewBtn.className = 'action-btn edit';
+        viewBtn.title = 'View Details';
+        viewBtn.dataset.auditLogView = String(log._id);
+        viewBtn.innerHTML = '<i class="fas fa-eye"></i>';
+        tdDetails.appendChild(viewBtn);
+
+        [tdTime, tdActor, tdAction, tdModule, tdTarget, tdDesc, tdDetails].forEach(td => tr.appendChild(td));
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll('[data-audit-log-view]').forEach(btn => {
+        btn.addEventListener('click', () => openAuditLogDetails(btn.dataset.auditLogView));
+      });
+    }
+
+    if (countEl) {
+      countEl.textContent = pagination.total + (pagination.total === 1 ? ' record' : ' records');
+    }
+
+    renderAuditLogPagination(paginationEl, pagination);
+  } catch (err) {
+    tbody.textContent = '';
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 7;
+    td.style.textAlign = 'center';
+    td.style.color = '#dc2626';
+    td.textContent = safeError(err);
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    showToast('Error', safeError(err), 'error');
+  }
+}
+
+function renderAuditLogPagination(container, pagination) {
+  if (!container) return;
+  container.textContent = '';
+  if (!pagination || pagination.totalPages <= 1) return;
+
+  const current = Number(pagination.page) || 1;
+  const totalPages = Number(pagination.totalPages) || 1;
+
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'page-btn';
+  prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+  prevBtn.disabled = current <= 1;
+  prevBtn.addEventListener('click', () => {
+    adminAuditLogsState.page = Math.max(1, current - 1);
+    loadAdminAuditLogs();
+  });
+  container.appendChild(prevBtn);
+
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - current) <= 1) {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn' + (i === current ? ' active' : '');
+      btn.textContent = String(i);
+      btn.addEventListener('click', () => {
+        adminAuditLogsState.page = i;
+        loadAdminAuditLogs();
+      });
+      container.appendChild(btn);
+    } else if (Math.abs(i - current) === 2) {
+      const ell = document.createElement('span');
+      ell.textContent = '…';
+      ell.style.alignSelf = 'center';
+      container.appendChild(ell);
+    }
+  }
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'page-btn';
+  nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+  nextBtn.disabled = current >= totalPages;
+  nextBtn.addEventListener('click', () => {
+    adminAuditLogsState.page = Math.min(totalPages, current + 1);
+    loadAdminAuditLogs();
+  });
+  container.appendChild(nextBtn);
+}
+
+function bindAuditLogFilters() {
+  const els = ['audit-log-search', 'audit-log-module', 'audit-log-action', 'audit-log-from', 'audit-log-to'];
+  els.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.auditBound) {
+      el.dataset.auditBound = '1';
+      const evt = el.id === 'audit-log-search' ? 'keyup' : 'change';
+      el.addEventListener(evt, () => {
+        adminAuditLogsState.page = 1;
+        loadAdminAuditLogs();
+      });
+    }
+  });
+  const clearBtn = document.getElementById('audit-log-filter-clear');
+  if (clearBtn && !clearBtn.dataset.auditBound) {
+    clearBtn.dataset.auditBound = '1';
+    clearBtn.addEventListener('click', () => {
+      els.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      adminAuditLogsState.page = 1;
+      loadAdminAuditLogs();
+    });
+  }
+}
+
+function prettyJSON(value) {
+  if (value === undefined || value === null) return '—';
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch (e) {
+    return escapeHTML(String(value));
+  }
+}
+
+async function openAuditLogDetails(id) {
+  const modal = document.getElementById('audit-log-detail-modal');
+  if (!modal) return;
+  try {
+    const data = await AdminAPI.auditLogs.get(id);
+    const log = (data && data.auditLog) || data;
+    const timeEl = document.getElementById('ald-time');
+    const actorEl = document.getElementById('ald-actor');
+    const actionEl = document.getElementById('ald-action');
+    const moduleEl = document.getElementById('ald-module');
+    const targetEl = document.getElementById('ald-target');
+    const descEl = document.getElementById('ald-desc');
+    const ipEl = document.getElementById('ald-ip');
+    const oldEl = document.getElementById('ald-old');
+    const newEl = document.getElementById('ald-new');
+    const metaEl = document.getElementById('ald-meta');
+
+    if (timeEl) timeEl.textContent = formatDateTime(log.createdAt);
+    const actor = (log.actorName || log.actorEmail || 'Admin') + (log.actorEmail && log.actorName ? ' — ' + log.actorEmail : '');
+    if (actorEl) actorEl.textContent = actor;
+    if (actionEl) actionEl.innerHTML = auditLogPill(log.action);
+    if (moduleEl) moduleEl.textContent = auditModuleLabel(log.module);
+    if (targetEl) {
+      targetEl.innerHTML = (log.targetType ? escapeHTML(log.targetType) : '—') + (log.targetId ? ' <code style="font-size:0.72rem;">' + escapeHTML(String(log.targetId)) + '</code>' : '');
+    }
+    if (descEl) descEl.textContent = log.description || '';
+    if (ipEl) ipEl.textContent = log.ipAddress || '—';
+    if (oldEl) oldEl.textContent = prettyJSON(log.oldValues);
+    if (newEl) newEl.textContent = prettyJSON(log.newValues);
+    if (metaEl) metaEl.textContent = prettyJSON(log.metadata);
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  } catch (err) {
+    showToast('Error', safeError(err), 'error');
+  }
+}
+
+async function initAdminAuditLogs() {
+  bindAuditLogFilters();
+  await loadAdminAuditLogs();
+}
+
 /* ============ ADMIN SETTINGS ============ */
 async function initAdminSettings() {
   try {
@@ -6174,6 +6424,7 @@ document.addEventListener('DOMContentLoaded', () => {
       initAdminCoupons();
       initAdminContactDetails();
       initAdminSettings();
+      initAdminAuditLogs();
       break;
   }
 });

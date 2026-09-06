@@ -7,6 +7,27 @@ const ApiError = require('../utils/ApiError');
 const generateSlug = require('../utils/generateSlug');
 const calculateProductPricing = require('../utils/calculateProductPricing');
 const categoryService = require('./categoryService');
+const auditLogService = require('./auditLogService');
+
+/**
+ * Compact product snapshot used in audit records (avoids storing enormous docs).
+ */
+function productAuditSnapshot(product) {
+  return {
+    id: product._id ? product._id.toString() : null,
+    name: product.name,
+    slug: product.slug,
+    description: product.description,
+    category: product.category ? product.category.toString() : null,
+    price: product.price,
+    originalPrice: product.originalPrice,
+    discount: product.discount,
+    stock: product.stock,
+    reorderLevel: product.reorderLevel,
+    status: product.status,
+    isFeatured: product.isFeatured
+  };
+}
 
 /**
  * Validate that a category ID exists.
@@ -325,7 +346,7 @@ function enrichProductPricing(product) {
  * Admin: Create a new product.
  * Validates category exists, prevents duplicate slug, updates category productCount.
  */
-async function createProduct(data) {
+async function createProduct(data, auditCtx = {}) {
   const category = await validateCategoryExists(data.category);
 
   // Never trust a client-submitted selling price — always derive it from the
@@ -369,17 +390,32 @@ async function createProduct(data) {
   // Re-load with the authoritative category discount so the response exposes
   // the derived Selling Price, discount %, and compare-to price.
   const enrichedProduct = await Product.findById(product._id).populate('category', 'name slug discount');
+
+  // Phase 8 — audit record (best-effort; only after the create succeeded).
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'CREATE',
+    module: 'PRODUCT',
+    targetId: product._id,
+    targetType: 'Product',
+    description: `Product "${product.name}" created`,
+    newValues: productAuditSnapshot(product),
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
+
   return enrichProductPricing(enrichedProduct);
 }
 
 /**
  * Admin: Update an existing product.
  */
-async function updateProduct(id, data) {
+async function updateProduct(id, data, auditCtx = {}) {
   const product = await Product.findById(id);
   if (!product) {
     throw new ApiError(404, 'Product not found', ['Product does not exist']);
   }
+  const oldSnapshot = productAuditSnapshot(product);
 
   // Never trust a client-submitted selling price — always derive it from the
   // Original Price and the authoritative category discount.
@@ -461,6 +497,26 @@ async function updateProduct(id, data) {
   // Re-load with the authoritative category discount so the response exposes
   // the derived Selling Price even after a category change.
   const enrichedProduct = await Product.findById(id).populate('category', 'name slug discount');
+
+  // Phase 8 — audit record for UPDATE (best-effort; only after the update succeeded).
+  const newSnapshot = productAuditSnapshot(product);
+  const oldComparable = JSON.stringify({ ...oldSnapshot, id: null });
+  const newComparable = JSON.stringify({ ...newSnapshot, id: null });
+  if (oldComparable !== newComparable) {
+    await auditLogService.createAuditLog({
+      actor: auditCtx.actor,
+      action: 'UPDATE',
+      module: 'PRODUCT',
+      targetId: id,
+      targetType: 'Product',
+      description: `Product "${product.name}" updated`,
+      oldValues: oldSnapshot,
+      newValues: newSnapshot,
+      ipAddress: auditCtx.ipAddress,
+      userAgent: auditCtx.userAgent
+    });
+  }
+
   return enrichProductPricing(enrichedProduct);
 }
 
@@ -489,11 +545,12 @@ async function updateProduct(id, data) {
  * separate, non-destructive action (see updateProduct). Setting
  * status=inactive MUST NOT delete anything.
  */
-async function deleteProduct(id) {
+async function deleteProduct(id, auditCtx = {}) {
   const product = await Product.findById(id);
   if (!product) {
     throw new ApiError(404, 'Product not found', ['Product does not exist']);
   }
+  const oldSnapshot = productAuditSnapshot(product);
 
   await Product.findByIdAndDelete(product._id);
 
@@ -501,6 +558,19 @@ async function deleteProduct(id) {
   if (product.category) {
     await categoryService.refreshCategoryProductCount(product.category.toString());
   }
+
+  // Phase 8 — audit record for DELETE (best-effort; only after the delete succeeded).
+  await auditLogService.createAuditLog({
+    actor: auditCtx.actor,
+    action: 'DELETE',
+    module: 'PRODUCT',
+    targetId: product._id,
+    targetType: 'Product',
+    description: `Product "${product.name}" deleted`,
+    oldValues: oldSnapshot,
+    ipAddress: auditCtx.ipAddress,
+    userAgent: auditCtx.userAgent
+  });
 
   return {
     deleted: true,
