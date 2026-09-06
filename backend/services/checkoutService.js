@@ -8,6 +8,7 @@ const calculatePricing = require('../utils/calculatePricing');
 const calculateProductPricing = require('../utils/calculateProductPricing');
 const generateOrderNumber = require('../utils/generateOrderNumber');
 const { withTransaction } = require('../utils/withTransaction');
+const couponService = require('./couponService');
 const { getLoyaltyDiscount } = require('../utils/loyaltyDiscount');
 const { MINIMUM_ONLINE_ORDER_AMOUNT, isMinimumOnlineOrderMet } = require('../utils/minimumOrder');
 const {
@@ -390,6 +391,37 @@ function enforceMinimumOrder(items, minimumOrderAmount) {
 }
 
 /**
+ * Apply an optional coupon to the order pricing.
+ *
+ * The coupon is ALWAYS applied LAST — on the "pre-coupon payable"
+ * (subtotal − ALL existing discounts: combo + loyalty + referral + wholesale).
+ * This same computation is used by both checkout validation and final order
+ * creation, so the two flows mathematically agree and the coupon is NEVER
+ * applied twice. The backend is the source of truth for the discount amount.
+ *
+ * @param {string|null} couponCode - Raw coupon code from delivery info (optional).
+ * @param {Object} pricing - Pricing object (subtotal/discount/deliveryCharge set).
+ * @param {Object} [sessionOpt={}] - Optional mongoose transaction session.
+ * @returns {Promise<{ coupon: Object|null, discountAmount: number, couponBasis: number }>}
+ */
+async function applyCouponToPricing(couponCode, pricing, sessionOpt = {}) {
+  const normalizedCode = couponCode ? String(couponCode).trim().toUpperCase() : '';
+  if (!normalizedCode) {
+    return { coupon: null, discountAmount: 0, couponBasis: 0 };
+  }
+
+  // Pre-coupon payable — the same basis the coupon minimum-order check uses.
+  const couponBasis = Math.round((pricing.subtotal - pricing.discount) * 100) / 100;
+
+  const { coupon, discountAmount } = await couponService.validateCoupon(
+    { code: normalizedCode, amount: couponBasis },
+    sessionOpt
+  );
+
+  return { coupon, discountAmount, couponBasis };
+}
+
+/**
  * Build the checkout summary from authoritative data.
  * Used by both validate and checkout endpoints.
  */
@@ -488,6 +520,16 @@ async function buildCheckoutSummary(userId, deliveryInfo) {
   pricing.discount = Math.round((comboDiscount + retailOrderLevelDiscount + wholesaleDiscountAmount) * 100) / 100;
   pricing.total = Math.round((pricing.subtotal - pricing.discount + pricing.deliveryCharge) * 100) / 100;
 
+  // --- Coupon (applied LAST, on the pre-coupon payable) ---
+  // The frontend only supplies the coupon CODE; the discount amount is always
+  // recomputed here by the backend (couponService), never trusted from the client.
+  const couponResult = await applyCouponToPricing(deliveryInfo.couponCode, pricing);
+  pricing.couponDiscount = couponResult.discountAmount;
+  if (couponResult.coupon) {
+    pricing.discount = Math.round((pricing.discount + pricing.couponDiscount) * 100) / 100;
+    pricing.total = Math.round((pricing.subtotal - pricing.discount + pricing.deliveryCharge) * 100) / 100;
+  }
+
   // Expected commission is only relevant for eligible referred retail orders.
   const finalProductAmount = calculateFinalProductAmount(items);
   const commission = calculateCommission(finalProductAmount);
@@ -495,6 +537,9 @@ async function buildCheckoutSummary(userId, deliveryInfo) {
   return {
     items,
     pricing,
+    coupon: couponResult.coupon
+      ? couponService.toPublicCoupon(couponResult.coupon)
+      : null,
     amountAfterCategoryDiscount,
     minimumOrderAmount: customerType === CUSTOMER_TYPES.WHOLESALE
       ? WHOLESALE_MIN_ORDER_AMOUNT
@@ -742,6 +787,17 @@ async function createOrder(userId, deliveryInfo, paymentMethod = 'cod') {
     pricing.discount = Math.round((comboDiscount + retailOrderLevelDiscount + wholesaleDiscountAmount) * 100) / 100;
     pricing.total = Math.round((pricing.subtotal - pricing.discount + pricing.deliveryCharge) * 100) / 100;
 
+    // --- Coupon (applied LAST, inside the transaction, on the pre-coupon payable) ---
+    // The backend independently re-validates the coupon at order creation. The
+    // customer only ever supplies the CODE; the discount amount below is always
+    // recomputed here and never taken from the frontend.
+    const couponResult = await applyCouponToPricing(deliveryInfo.couponCode, pricing, sessionOpt);
+    pricing.couponDiscount = couponResult.discountAmount;
+    if (couponResult.coupon) {
+      pricing.discount = Math.round((pricing.discount + pricing.couponDiscount) * 100) / 100;
+      pricing.total = Math.round((pricing.subtotal - pricing.discount + pricing.deliveryCharge) * 100) / 100;
+    }
+
     // Re-enforce the RETAIL minimum order value on authoritative data inside the
     // transaction. (The wholesale ₹50,000 minimum was already enforced above.)
     if (customerType !== CUSTOMER_TYPES.WHOLESALE) {
@@ -779,6 +835,7 @@ async function createOrder(userId, deliveryInfo, paymentMethod = 'cod') {
           },
           items: orderItems,
           pricing,
+          couponCode: couponResult.coupon ? couponResult.coupon.code : null,
           payment: {
             method: paymentMethod,
             status: paymentMethod === 'cod' ? 'pending' : 'pending'
@@ -832,6 +889,13 @@ async function createOrder(userId, deliveryInfo, paymentMethod = 'cod') {
     // Clear the cart
     cart.items = [];
     await cart.save(sessionOpt);
+
+    // Coupon usage is consumed ONLY after the order is successfully created.
+    // Validation alone never increments usage. Atomic guard prevents usage from
+    // ever exceeding the configured limit under concurrent order attempts.
+    if (couponResult.coupon) {
+      await couponService.incrementCouponUsage(couponResult.coupon._id, sessionOpt);
+    }
 
     return {
       order: order[0],

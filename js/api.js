@@ -346,6 +346,7 @@ const CustomerAPI = {
   removeCartItem: (productId) => apiRequest(`/cart/items/${productId}`, { method: 'DELETE' }),
   clearCart: () => apiRequest('/cart', { method: 'DELETE' }),
   validateCheckout: (data) => apiRequest('/checkout/validate', { method: 'POST', body: data }),
+  validateCoupon: (data) => apiRequest('/coupon/validate', { method: 'POST', body: data }),
   placeOrder: (data) => apiRequest('/checkout', { method: 'POST', body: data }),
   myOrders: (params = {}) => {
     const qs = new URLSearchParams(params).toString();
@@ -506,6 +507,16 @@ const AdminAPI = {
   settings: {
     get: () => apiRequest('/admin/settings', { admin: true }),
     update: (data) => apiRequest('/admin/settings', { method: 'PUT', body: data, admin: true })
+  },
+  coupons: {
+    list: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return apiRequest(`/admin/coupons${qs ? `?${qs}` : ''}`, { admin: true });
+    },
+    get: (id) => apiRequest(`/admin/coupons/${id}`, { admin: true }),
+    create: (data) => apiRequest('/admin/coupons', { method: 'POST', body: data, admin: true }),
+    update: (id, data) => apiRequest(`/admin/coupons/${id}`, { method: 'PUT', body: data, admin: true }),
+    remove: (id) => apiRequest(`/admin/coupons/${id}`, { method: 'DELETE', admin: true })
   }
 };
 

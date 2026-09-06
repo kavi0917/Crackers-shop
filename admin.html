@@ -29,6 +29,7 @@
         <a href="#" data-admin-section="resellers"><i class="fas fa-user-tag"></i> Resellers</a>
         <a href="#" data-admin-section="commissions"><i class="fas fa-file-invoice-dollar"></i> Commissions</a>
         <a href="#" data-admin-section="inventory"><i class="fas fa-warehouse"></i> Inventory</a>
+        <a href="#" data-admin-section="coupons"><i class="fas fa-ticket-alt"></i> Coupons</a>
         <div class="nav-section">Insights</div>
         <a href="#" data-admin-section="reports"><i class="fas fa-chart-line"></i> Sales Reports</a>
         <a href="#" data-admin-section="reviews"><i class="fas fa-star"></i> Reviews</a>
@@ -847,6 +848,38 @@
         </div>
       </div>
 
+      <!-- ============ COUPONS SECTION ============ -->
+      <div class="admin-section" id="admin-coupons" style="display:none;">
+        <div class="admin-card">
+          <h3>Coupon Management
+            <button class="btn btn-primary btn-sm" data-modal-open="#coupon-modal"><i class="fas fa-plus"></i> Add Coupon</button>
+          </h3>
+          <div style="margin-bottom:12px;">
+            <input type="text" id="coupon-search" class="form-control" placeholder="Search coupons by code..." style="max-width:320px;">
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Coupon Code</th>
+                  <th>Discount</th>
+                  <th>Min Order</th>
+                  <th>Max Discount</th>
+                  <th>Valid From</th>
+                  <th>Valid Until</th>
+                  <th>Usage</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="9" style="text-align:center; color:var(--text-muted);">Loading coupons...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- ============ SETTINGS SECTION ============ -->
       <div class="admin-section" id="admin-settings" style="display:none;">
         <div class="admin-card">
@@ -1107,6 +1140,70 @@
     </div>
   </div>
 
+  <!-- ============ COUPON MODAL (Admin) ============ -->
+  <div class="modal-overlay" id="coupon-modal">
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-header">
+        <h3 id="coupon-modal-title">Add Coupon</h3>
+        <button class="modal-close" data-modal-close><i class="fas fa-times"></i></button>
+      </div>
+      <form data-validate data-no-generic id="coupon-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Coupon Code <span>*</span></label>
+            <input type="text" class="form-control" id="coupon-code-input" placeholder="e.g. WELCOME10" maxlength="30" style="text-transform:uppercase;" required>
+            <span class="form-hint">Uppercase letters/digits (example: SAVE100)</span>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select class="form-control" id="coupon-status-select">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Discount Type <span>*</span></label>
+            <select class="form-control" id="coupon-discount-type-select" required>
+              <option value="percentage">Percentage (%)</option>
+              <option value="fixed">Fixed (₹)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Discount Value <span>*</span></label>
+            <input type="number" class="form-control" id="coupon-discount-value-input" placeholder="e.g. 10" min="0.01" step="0.01" required>
+            <span class="form-hint">Percentage coupons are limited to 0–100</span>
+          </div>
+          <div class="form-group">
+            <label>Minimum Order Amount (₹)</label>
+            <input type="number" class="form-control" id="coupon-min-order-input" placeholder="0" min="0" step="0.01" value="0">
+          </div>
+          <div class="form-group">
+            <label>Maximum Discount (₹)</label>
+            <input type="number" class="form-control" id="coupon-max-discount-input" placeholder="Unlimited" min="0" step="0.01">
+            <span class="form-hint">Only used for percentage coupons</span>
+          </div>
+          <div class="form-group">
+            <label>Valid From</label>
+            <input type="date" class="form-control" id="coupon-start-date-input">
+          </div>
+          <div class="form-group">
+            <label>Valid Until</label>
+            <input type="date" class="form-control" id="coupon-expiry-date-input">
+          </div>
+          <div class="form-group">
+            <label>Usage Limit</label>
+            <input type="number" class="form-control" id="coupon-usage-limit-input" placeholder="Unlimited" min="0" step="1">
+            <span class="form-hint">Leave empty for unlimited uses</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:8px;">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Coupon</button>
+          <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ============ COMBO MODAL (Admin) ============ -->
   <div class="modal-overlay" id="combo-modal">
     <div class="modal" style="max-width:640px;">
@@ -1264,7 +1361,7 @@
           orders: 'Orders', customers: 'Customers', inventory: 'Inventory',
           reports: 'Sales Reports', reviews: 'Reviews', contact: 'Contact Messages',
           combos: 'Combos', 'contact-details': 'Contact Details', settings: 'Settings',
-          resellers: 'Resellers', commissions: 'Commissions'
+          resellers: 'Resellers', commissions: 'Commissions', coupons: 'Coupons'
         };
         const titleEl = document.getElementById('admin-page-title');
         if (titleEl) titleEl.textContent = titles[section] || 'Dashboard';

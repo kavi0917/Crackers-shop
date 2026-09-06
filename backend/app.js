@@ -131,8 +131,14 @@ app.use('/api/wishlist', require('./routes/wishlist'));
 app.use('/api/checkout', require('./routes/checkout'));
 app.use('/api/orders', require('./routes/orders'));
 
+// Coupon validation (customer) — Phase 6
+app.use('/api/coupon', require('./routes/coupon'));
+
 // Phase 6 — Admin Inventory
 app.use('/api/admin/inventory', require('./routes/adminInventory'));
+
+// Phase 6 — Coupon Management (admin-only)
+app.use('/api/admin/coupons', require('./routes/adminCoupons'));
 
 // Phase 7 — Admin Dashboard + Reports
 app.use('/api/admin/orders', require('./routes/adminOrders'));

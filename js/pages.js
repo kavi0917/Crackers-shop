@@ -1978,6 +1978,11 @@ async function initCheckoutPageAPI() {
   let checkoutCustomerType = 'retail';
   let checkoutMinOrder = 0;
   let checkoutCartAmount = 0;
+  // Coupon state — the code is sent to the backend; the discount amount shown
+  // here is display-only (the server recomputes it authoritatively at checkout).
+  let appliedCoupon = null; // { code, discountAmount }
+  let checkoutCouponBasis = 0; // subtotal − order-level discounts (pre-coupon payable)
+  let checkoutBaseTotal = 0;   // backend grand total BEFORE coupon
 
   function updateCheckoutMinOrderView() {
     const row = document.querySelector('[data-min-order-row]');
@@ -2009,6 +2014,85 @@ async function initCheckoutPageAPI() {
     }
   }
 
+  /* ---------- Coupon apply/remove (display only — backend is authoritative) ---------- */
+  function bindCheckoutCoupon() {
+    const input = document.querySelector('[data-coupon-input]');
+    const applyBtn = document.querySelector('[data-coupon-apply]');
+    const removeBtn = document.querySelector('[data-coupon-remove]');
+    const formRow = document.querySelector('[data-coupon-form]');
+    const appliedRow = document.querySelector('[data-coupon-applied]');
+    const statusEl = document.querySelector('[data-coupon-status]');
+    const outputRow = document.querySelector('[data-coupon-summary-row]');
+    const outputValue = document.querySelector('[data-coupon-summary-value]');
+    const outputLabel = document.querySelector('[data-coupon-summary-label]');
+    const totalEl = document.querySelector('.order-summary .summary-row.total span:last-child');
+
+    function setStatus(msg, ok) {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.style.color = ok ? '#16a34a' : '#dc2626';
+    }
+
+    function applyToDisplay(couponInfo) {
+      const code = (couponInfo.code || '').toUpperCase();
+      const discountAmount = Number(couponInfo.discountAmount) || 0;
+      appliedCoupon = { code, discountAmount };
+      if (input) input.value = code;
+      if (formRow) formRow.style.display = 'none';
+      if (appliedRow) appliedRow.style.display = 'flex';
+      const codeEl = document.querySelector('[data-coupon-code]');
+      if (codeEl) codeEl.textContent = code;
+      const discEl = document.querySelector('[data-coupon-discount]');
+      if (discEl) discEl.textContent = '−' + formatINR(discountAmount);
+      if (outputRow) outputRow.style.display = 'flex';
+      if (outputLabel) outputLabel.textContent = 'Coupon Discount — ' + code;
+      if (outputValue) outputValue.textContent = '−' + formatINR(discountAmount);
+      if (totalEl) totalEl.textContent = formatINR(Math.max(0, checkoutBaseTotal - discountAmount));
+    }
+
+    function removeCoupon() {
+      appliedCoupon = null;
+      if (input) input.value = '';
+      if (formRow) formRow.style.display = 'flex';
+      if (appliedRow) appliedRow.style.display = 'none';
+      if (outputRow) outputRow.style.display = 'none';
+      if (outputValue) outputValue.textContent = '− ₹0';
+      setStatus('', true);
+      if (totalEl) totalEl.textContent = formatINR(checkoutBaseTotal);
+    }
+
+    if (applyBtn) {
+      applyBtn.addEventListener('click', async () => {
+        if (applyBtn.dataset.loading === '1') return;
+        const code = input ? input.value.trim() : '';
+        if (!code) { setStatus('Please enter a coupon code.', false); return; }
+        applyBtn.disabled = true;
+        applyBtn.dataset.loading = '1';
+        try {
+          const res = await CustomerAPI.validateCoupon({ code, subtotal: checkoutCouponBasis });
+          // The backend returns the authoritative coupon discount at the TOP level of the
+          // response (data.discountAmount). The coupon object only mirrors static coupon
+          // configuration and has no amount field — always prefer the server-computed
+          // discountAmount so a valid coupon never shows −₹0.
+          const couponInfo = res && res.coupon ? Object.assign({}, res.coupon) : { code };
+          if (res && res.discountAmount !== undefined) {
+            couponInfo.discountAmount = res.discountAmount;
+          }
+          applyToDisplay(couponInfo);
+          setStatus('Coupon applied!', true);
+        } catch (e) {
+          setStatus(safeError(e), false);
+        } finally {
+          applyBtn.disabled = false;
+          delete applyBtn.dataset.loading;
+        }
+      });
+    }
+    if (removeBtn) {
+      removeBtn.addEventListener('click', removeCoupon);
+    }
+  }
+
   // Auto-fill Step 1 (Customer Details) from the authenticated customer's
   // existing profile (uses the same data /api/auth/me returns for profile.html).
   const checkoutFormForProfile = document.querySelector('#checkout-form');
@@ -2028,6 +2112,9 @@ async function initCheckoutPageAPI() {
       checkoutMinOrder = Number(data.minimumOrderAmount);
     }
     checkoutCartAmount = Number(data.subtotal) || 0;
+    // Coupon basis = subtotal − order-level discounts (same rule as the backend).
+    checkoutCouponBasis = Math.round((checkoutCartAmount - (Number(data.discount) || 0)) * 100) / 100;
+    checkoutBaseTotal = Number.isFinite(Number(data.total)) ? Number(data.total) : (checkoutCartAmount - (Number(data.discount) || 0) + (Number(data.deliveryCharge) || 0));
 
     const reviewProducts = document.querySelector('.checkout-step-panel:nth-child(3) .confirm-products');
     if (reviewProducts) {
@@ -2177,6 +2264,8 @@ async function initCheckoutPageAPI() {
     updateCheckoutMinOrderView();
   } catch (e) { /* silent */ }
 
+  bindCheckoutCoupon();
+
   // Replace localStorage cart logic with real API order placement
   const form = document.querySelector('#checkout-form');
   const placeBtn = document.querySelector('[data-place-order]');
@@ -2245,7 +2334,8 @@ async function initCheckoutPageAPI() {
           city,
           state,
           pincode,
-          paymentMethod: 'cod'
+          paymentMethod: 'cod',
+          couponCode: appliedCoupon ? appliedCoupon.code : undefined
         });
 
         const orderMongoId = result.order?._id || result.orderId;
@@ -5603,6 +5693,259 @@ document.addEventListener('DOMContentLoaded', () => {
   initComboImageInput();
 });
 
+/* ============ ADMIN COUPONS ============ */
+let adminCouponCache = [];
+
+async function initAdminCoupons() {
+  try {
+    const data = await AdminAPI.coupons.list();
+    adminCouponCache = data.coupons || [];
+    renderCouponTable(applyCouponSearchFilter());
+    bindCouponSearch();
+    bindCouponAddButton();
+  } catch (e) { showToast('Error', safeError(e), 'error'); }
+}
+
+function applyCouponSearchFilter() {
+  const input = document.getElementById('coupon-search');
+  const q = input ? (input.value || '').trim().toLowerCase() : '';
+  if (!q) return adminCouponCache;
+  return adminCouponCache.filter(c => (c.code || '').toLowerCase().includes(q));
+}
+
+function bindCouponSearch() {
+  const input = document.getElementById('coupon-search');
+  if (!input || input.dataset.bound) return;
+  input.dataset.bound = '1';
+  input.addEventListener('input', () => renderCouponTable(applyCouponSearchFilter()));
+}
+
+function bindCouponAddButton() {
+  const btn = document.querySelector('[data-modal-open="#coupon-modal"]');
+  if (btn && !btn.dataset.couponBound) {
+    btn.dataset.couponBound = '1';
+    btn.addEventListener('click', () => openCouponEditor(null));
+  }
+}
+
+function formatCouponDate(d) {
+  if (!d) return '—';
+  const s = String(d);
+  return s.length >= 10 ? s.slice(0, 10) : (formatDate(d) || '—');
+}
+
+function renderCouponTable(coupons) {
+  const tbody = document.querySelector('#admin-coupons .data-table tbody');
+  if (!tbody) return;
+  tbody.textContent = '';
+  if (!coupons || coupons.length === 0) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 9;
+    td.style.textAlign = 'center';
+    td.style.color = 'var(--text-muted)';
+    td.textContent = 'No matching coupons found.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  coupons.forEach(c => {
+    const tr = document.createElement('tr');
+    const id = c.id || c._id;
+
+    const tdCode = document.createElement('td');
+    const b = document.createElement('b'); b.textContent = c.code || ''; tdCode.appendChild(b);
+
+    const tdDisc = document.createElement('td');
+    tdDisc.textContent = c.discountType === 'fixed' ? formatINR(c.discountValue) : (c.discountValue || 0) + '%';
+
+    const tdMin = document.createElement('td');
+    tdMin.textContent = c.minimumOrderAmount ? formatINR(c.minimumOrderAmount) : '—';
+
+    const tdMax = document.createElement('td');
+    tdMax.textContent = c.maximumDiscount ? formatINR(c.maximumDiscount) : '—';
+
+    const tdFrom = document.createElement('td');
+    tdFrom.textContent = formatCouponDate(c.startDate);
+    const tdUntil = document.createElement('td');
+    tdUntil.textContent = formatCouponDate(c.expiryDate);
+
+    const tdUsage = document.createElement('td');
+    tdUsage.textContent = c.usageLimit != null ? (c.usedCount || 0) + ' / ' + c.usageLimit : (c.usedCount || 0);
+
+    const tdStatus = document.createElement('td');
+    const statusWrap = document.createElement('div');
+    statusWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px; align-items:flex-start;';
+    const pill = document.createElement('span');
+    pill.className = 'stock-pill ' + (c.status === 'active' ? 'stock-in' : 'stock-out');
+    pill.textContent = c.status === 'active' ? '🟢 Active' : '🔴 Inactive';
+    statusWrap.appendChild(pill);
+    const statusBtn = document.createElement('button');
+    statusBtn.type = 'button';
+    statusBtn.className = 'btn btn-sm ' + (c.status === 'active' ? 'btn-ghost' : 'btn-outline');
+    statusBtn.textContent = c.status === 'active' ? 'Deactivate' : 'Activate';
+    statusBtn.dataset.statusToggleCoupon = id;
+    statusBtn.dataset.status = c.status;
+    statusBtn.dataset.name = c.code || '';
+    statusWrap.appendChild(statusBtn);
+    tdStatus.appendChild(statusWrap);
+
+    const tdAct = document.createElement('td');
+    const actDiv = document.createElement('div'); actDiv.className = 'table-actions';
+    const editBtn = document.createElement('button'); editBtn.className = 'action-btn edit'; editBtn.title = 'Edit Coupon';
+    editBtn.dataset.editCoupon = id; editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+    const delBtn = document.createElement('button'); delBtn.className = 'action-btn delete'; delBtn.title = 'Delete Coupon';
+    delBtn.dataset.deleteCoupon = id; delBtn.dataset.name = c.code || '';
+    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+    actDiv.appendChild(editBtn);
+    actDiv.appendChild(delBtn);
+    tdAct.appendChild(actDiv);
+
+    [tdCode, tdDisc, tdMin, tdMax, tdFrom, tdUntil, tdUsage, tdStatus, tdAct].forEach(td => tr.appendChild(td));
+    tbody.appendChild(tr);
+  });
+
+  bindCouponActions(tbody);
+}
+
+function bindCouponActions(tbody) {
+  if (!tbody) return;
+
+  tbody.querySelectorAll('[data-edit-coupon]').forEach(btn => {
+    btn.addEventListener('click', () => openCouponEditor(btn.dataset.editCoupon));
+  });
+
+  tbody.querySelectorAll('[data-status-toggle-coupon]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const newStatus = btn.dataset.status === 'active' ? 'inactive' : 'active';
+      const name = btn.dataset.name || 'this coupon';
+      const verb = newStatus === 'active' ? 'activate' : 'deactivate';
+      showConfirm(`${verb === 'activate' ? 'Activate' : 'Deactivate'} coupon "${name}"?`, async () => {
+        try {
+          await AdminAPI.coupons.update(btn.dataset.statusToggleCoupon, { status: newStatus });
+          showToast('Updated', `Coupon "${name}" is now ${newStatus}.`);
+          initAdminCoupons();
+        } catch (e) { showToast('Error', safeError(e), 'error'); }
+      });
+    });
+  });
+
+  tbody.querySelectorAll('[data-delete-coupon]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.name || 'this coupon';
+      showConfirm(`Delete coupon "${name}"? Historical orders keep their recorded code — they are not affected.`, async () => {
+        try {
+          await AdminAPI.coupons.remove(btn.dataset.deleteCoupon);
+          showToast('Deleted', `Coupon "${name}" deleted.`, 'warning');
+          initAdminCoupons();
+        } catch (e) { showToast('Error', safeError(e), 'error'); }
+      });
+    });
+  });
+}
+
+function openCouponEditor(couponId) {
+  const modal = document.getElementById('coupon-modal');
+  const form = document.getElementById('coupon-form');
+  const title = document.getElementById('coupon-modal-title');
+  if (!modal || !form) return;
+
+  form.reset();
+  delete form.dataset.editId;
+  title.textContent = 'Add Coupon';
+  document.getElementById('coupon-status-select').value = 'active';
+  document.getElementById('coupon-discount-type-select').value = 'percentage';
+
+  if (couponId) {
+    AdminAPI.coupons.get(couponId).then(res => {
+      const c = res.coupon || res;
+      document.getElementById('coupon-code-input').value = c.code || '';
+      document.getElementById('coupon-status-select').value = c.status || 'active';
+      document.getElementById('coupon-discount-type-select').value = c.discountType || 'percentage';
+      document.getElementById('coupon-discount-value-input').value = c.discountValue || '';
+      document.getElementById('coupon-min-order-input').value = c.minimumOrderAmount || 0;
+      document.getElementById('coupon-max-discount-input').value = c.maximumDiscount != null ? c.maximumDiscount : '';
+      document.getElementById('coupon-start-date-input').value = formatCouponDate(c.startDate) === '—' ? '' : formatCouponDate(c.startDate);
+      document.getElementById('coupon-expiry-date-input').value = formatCouponDate(c.expiryDate) === '—' ? '' : formatCouponDate(c.expiryDate);
+      document.getElementById('coupon-usage-limit-input').value = c.usageLimit != null ? c.usageLimit : '';
+      form.dataset.editId = couponId;
+      title.textContent = 'Edit Coupon';
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+    }).catch(e => showToast('Error', safeError(e), 'error'));
+    return;
+  }
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+async function submitCouponForm(e) {
+  e.preventDefault();
+  const form = document.getElementById('coupon-form');
+  if (!form || form.dataset.submitting === '1') return;
+  const editId = form.dataset.editId || '';
+
+  const code = document.getElementById('coupon-code-input').value.trim();
+  const status = document.getElementById('coupon-status-select').value;
+  const discountType = document.getElementById('coupon-discount-type-select').value;
+  const discountValue = Number(document.getElementById('coupon-discount-value-input').value);
+  const minimumOrderAmount = Number(document.getElementById('coupon-min-order-input').value) || 0;
+  const maxDiscRaw = document.getElementById('coupon-max-discount-input').value;
+  const maximumDiscount = maxDiscRaw !== '' ? Number(maxDiscRaw) : null;
+  const startDate = document.getElementById('coupon-start-date-input').value || null;
+  const expiryDate = document.getElementById('coupon-expiry-date-input').value || null;
+  const usageLimitRaw = document.getElementById('coupon-usage-limit-input').value;
+  const usageLimit = usageLimitRaw !== '' ? Number(usageLimitRaw) : null;
+
+  // Quick client-side checks — the backend re-validates authoritatively.
+  if (!code) { showToast('Error', 'Please enter a coupon code.', 'error'); return; }
+  if (!discountType) { showToast('Error', 'Please choose a discount type.', 'error'); return; }
+  if (isNaN(discountValue) || discountValue <= 0) { showToast('Error', 'Discount value must be greater than 0.', 'error'); return; }
+  if (discountType === 'percentage' && discountValue > 100) { showToast('Error', 'Percentage discount cannot exceed 100%.', 'error'); return; }
+  if (minimumOrderAmount < 0) { showToast('Error', 'Minimum order amount cannot be negative.', 'error'); return; }
+  if (maximumDiscount !== null && maximumDiscount < 0) { showToast('Error', 'Maximum discount cannot be negative.', 'error'); return; }
+  if (usageLimit !== null && (!Number.isInteger(usageLimit) || usageLimit < 0)) {
+    showToast('Error', 'Usage limit must be a non-negative whole number.', 'error'); return;
+  }
+  if (startDate && expiryDate && new Date(expiryDate).getTime() < new Date(startDate).getTime()) {
+    showToast('Error', 'Expiry date cannot be before the start date.', 'error'); return;
+  }
+
+  const submitBtn = form.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  const defaultHtml = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+  form.dataset.submitting = '1';
+  try {
+    const payload = { code, status, discountType, discountValue, minimumOrderAmount, maximumDiscount, startDate, expiryDate, usageLimit };
+    if (editId) {
+      await AdminAPI.coupons.update(editId, payload);
+      showToast('Coupon updated', `Coupon "${code}" saved.`);
+    } else {
+      await AdminAPI.coupons.create(payload);
+      showToast('Coupon created', `Coupon "${code}" created.`);
+    }
+    document.getElementById('coupon-modal').classList.remove('open');
+    document.getElementById('coupon-modal').setAttribute('aria-hidden', 'true');
+    initAdminCoupons();
+  } catch (err) {
+    showToast('Error', safeError(err), 'error');
+  } finally {
+    delete form.dataset.submitting;
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = defaultHtml;
+  }
+}
+
+// Bind the coupon form once.
+document.addEventListener('DOMContentLoaded', () => {
+  const cf = document.getElementById('coupon-form');
+  if (cf && !cf.dataset.bound) {
+    cf.dataset.bound = '1';
+    cf.addEventListener('submit', submitCouponForm);
+  }
+});
+
 /* ============ ADMIN SETTINGS ============ */
 async function initAdminSettings() {
   try {
@@ -5828,6 +6171,7 @@ document.addEventListener('DOMContentLoaded', () => {
       initAdminReviews();
       initAdminContact();
       initAdminCombos();
+      initAdminCoupons();
       initAdminContactDetails();
       initAdminSettings();
       break;

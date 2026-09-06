@@ -42,7 +42,13 @@ const validateDeliveryInfo = [
   body('pincode')
     .trim()
     .notEmpty().withMessage('Pincode is required')
-    .matches(/^\d{6}$/).withMessage('Pincode must be exactly 6 digits')
+    .matches(/^\d{6}$/).withMessage('Pincode must be exactly 6 digits'),
+
+  body('couponCode')
+    .optional({ values: 'falsy' })
+    .trim()
+    .toUpperCase()
+    .isLength({ max: 30 }).withMessage('Coupon code cannot exceed 30 characters')
 ];
 
 /**
