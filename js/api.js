@@ -387,7 +387,11 @@ const AdminAPI = {
     topProducts: (limit = 5) => apiRequest(`/admin/dashboard/top-products?limit=${limit}`, { admin: true }),
     categorySales: () => apiRequest('/admin/dashboard/category-sales', { admin: true }),
     recentOrders: (limit = 5) => apiRequest(`/admin/dashboard/recent-orders?limit=${limit}`, { admin: true }),
-    lowStock: () => apiRequest('/admin/dashboard/low-stock', { admin: true })
+    lowStock: () => apiRequest('/admin/dashboard/low-stock', { admin: true }),
+    analytics: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return apiRequest(`/admin/dashboard/analytics${qs ? `?${qs}` : ''}`, { admin: true });
+    }
   },
   products: {
     list: (params = {}) => {

@@ -96,6 +96,20 @@ const getLowStock = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * GET /api/admin/dashboard/analytics
+ * Consolidated Phase 5 dashboard analytics payload (single request).
+ */
+const getAnalytics = asyncHandler(async (req, res) => {
+  const data = await adminDashboardService.getAnalytics(req.query);
+
+  res.json({
+    success: true,
+    message: 'Dashboard analytics retrieved successfully',
+    data
+  });
+});
+
 module.exports = {
   getSummary,
   getSales,
@@ -103,5 +117,6 @@ module.exports = {
   getTopProducts,
   getCategorySales,
   getRecentOrders,
-  getLowStock
+  getLowStock,
+  getAnalytics
 };

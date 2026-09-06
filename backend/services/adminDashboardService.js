@@ -217,9 +217,15 @@ async function getSales(query) {
 /**
  * GET /api/admin/dashboard/orders
  * Order counts grouped by status.
+ * Optional { start, end } date range filters the counts to that window
+ * (existing callers without a range keep the original all-time behaviour).
  */
-async function getOrderStats() {
+async function getOrderStats({ start = null, end = null } = {}) {
+  const match = {};
+  if (start && end) match.createdAt = { $gte: start, $lte: end };
+
   const rows = await Order.aggregate([
+    { $match: match },
     { $group: { _id: '$status', count: { $sum: 1 } } }
   ]);
 
@@ -354,6 +360,214 @@ async function getRecentOrders(query) {
   }));
 }
 
+/* ============================================================
+   Phase 5 — Consolidated Real-time Dashboard Analytics
+   ============================================================ */
+
+// Allowed period presets for the consolidated analytics endpoint.
+// 'week' = last 7 days, 'month' = last ~30 days (see parseDateRange).
+const ANALYTICS_PERIODS = ['today', 'week', 'month', 'this_year', 'all'];
+
+/**
+ * Sales trend (non-cancelled orders only — the existing dashboard sales
+ * definition) bucketed by a granularity chosen from the requested range:
+ * hourly for a single day, daily for short ranges, monthly otherwise.
+ * Uses the STORED order total (pricing.total); pricing is never recomputed.
+ */
+async function getSalesTrend(start, end) {
+  const match = buildOrderMatch(start, end);
+
+  let granularity = 'month';
+  if (start && end) {
+    const spanDays = Math.max(0, Math.round((end - start) / (24 * 60 * 60 * 1000)));
+    if (spanDays <= 1) granularity = 'hour';
+    else if (spanDays <= 45) granularity = 'day';
+  }
+
+  let groupId;
+  if (granularity === 'hour') {
+    groupId = {
+      year: { $year: '$createdAt' },
+      month: { $month: '$createdAt' },
+      day: { $dayOfMonth: '$createdAt' },
+      hour: { $hour: '$createdAt' }
+    };
+  } else if (granularity === 'day') {
+    groupId = {
+      year: { $year: '$createdAt' },
+      month: { $month: '$createdAt' },
+      day: { $dayOfMonth: '$createdAt' }
+    };
+  } else {
+    groupId = {
+      year: { $year: '$createdAt' },
+      month: { $month: '$createdAt' }
+    };
+  }
+
+  const rows = await Order.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: groupId,
+        revenue: { $sum: '$pricing.total' },
+        orderCount: { $sum: 1 }
+      }
+    },
+    { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1, '_id.hour': 1 } }
+  ]);
+
+  return {
+    granularity,
+    sales: rows.map((r) => ({ period: r._id, revenue: r.revenue, orderCount: r.orderCount }))
+  };
+}
+
+/**
+ * Active customer breakdown. customerType uses the exact schema values
+ * (retail | wholesale). `newCustomers` are active customers who registered
+ * within the selected period (User.createdAt) — a documented dashboard
+ * convention; customer records are never modified.
+ */
+async function getCustomerAnalytics(start, end) {
+  const rangeMatch = start && end ? { createdAt: { $gte: start, $lte: end } } : {};
+
+  const [result] = await User.aggregate([
+    { $match: { status: 'active' } },
+    {
+      $facet: {
+        total: [{ $count: 'count' }],
+        retail: [{ $match: { customerType: 'retail' } }, { $count: 'count' }],
+        wholesale: [{ $match: { customerType: 'wholesale' } }, { $count: 'count' }],
+        newCustomers: [{ $match: rangeMatch }, { $count: 'count' }]
+      }
+    }
+  ]);
+
+  const count = (arr) => (Array.isArray(arr) && arr.length ? arr[0].count : 0);
+
+  return {
+    total: count(result && result.total),
+    retail: count(result && result.retail),
+    wholesale: count(result && result.wholesale),
+    newCustomers: count(result && result.newCustomers)
+  };
+}
+
+/**
+ * Retail vs wholesale sales split (non-cancelled orders) using the customer
+ * type snapshot stored on each order (pricing.customerType). Legacy orders
+ * that predate that snapshot default to the project default: retail.
+ * Uses the stored order total — wholesale/retail discounts are NEVER
+ * recalculated.
+ */
+async function getCustomerTypeSales(start, end) {
+  const match = buildOrderMatch(start, end);
+
+  const rows = await Order.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: '$pricing.customerType',
+        sales: { $sum: '$pricing.total' },
+        orderCount: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const result = {
+    retail: { sales: 0, orderCount: 0 },
+    wholesale: { sales: 0, orderCount: 0 }
+  };
+
+  rows.forEach((r) => {
+    const type = r._id === 'wholesale' ? 'wholesale' : 'retail';
+    result[type].sales += r.sales || 0;
+    result[type].orderCount += r.orderCount || 0;
+  });
+
+  return result;
+}
+
+/**
+ * GET /api/admin/dashboard/analytics
+ * One consolidated payload for the Admin Dashboard so the whole page loads
+ * with a single admin-authenticated request. Reuses the existing dashboard
+ * queries/aggregations (order match definition, top products, category
+ * sales, low-stock threshold + filter, recent orders, order stats).
+ */
+async function getAnalytics(query) {
+  const raw = query && query.period ? String(query.period).trim() : 'all';
+  const period = raw || 'all';
+  if (!ANALYTICS_PERIODS.includes(period)) {
+    throw new ApiError(400, 'Invalid period', [`period must be one of: ${ANALYTICS_PERIODS.join(', ')}`]);
+  }
+
+  const { start, end } = parseDateRange({ period });
+
+  const lowStockThreshold = await getLowStockThreshold();
+  const lowStockFilter = buildLowStockFilter(lowStockThreshold);
+
+  const [
+    salesAgg,
+    orderStats,
+    bestSellingProducts,
+    bestSellingCategories,
+    salesTrend,
+    customers,
+    customerTypeSales,
+    totalProducts,
+    totalCustomers,
+    lowStockCount,
+    outOfStockCount,
+    lowStockProducts,
+    recentOrders
+  ] = await Promise.all([
+    // Total sales: sum of the STORED order totals for non-cancelled orders.
+    Order.aggregate([
+      { $match: buildOrderMatch(start, end) },
+      { $group: { _id: null, total: { $sum: '$pricing.total' } } }
+    ]),
+    getOrderStats({ start, end }),
+    getTopProducts({ period, limit: 5 }),
+    getCategorySales({ period }),
+    getSalesTrend(start, end),
+    getCustomerAnalytics(start, end),
+    getCustomerTypeSales(start, end),
+    Product.countDocuments({ status: 'active' }),
+    User.countDocuments({ status: 'active' }),
+    Product.countDocuments({ status: 'active', ...lowStockFilter }),
+    Product.countDocuments({ status: 'active', stock: 0 }),
+    getLowStock(),
+    getRecentOrders({ limit: 5 })
+  ]);
+
+  const byStatus = {};
+  orderStats.byStatus.forEach((s) => { byStatus[s.status] = s.count; });
+
+  return {
+    period: { value: period, start, end },
+    summary: {
+      totalSales: salesAgg.length ? salesAgg[0].total : 0,
+      totalOrders: orderStats.total,
+      totalProducts,
+      totalCustomers,
+      pendingOrders: byStatus.pending || 0,
+      deliveredOrders: byStatus.delivered || 0,
+      lowStockCount,
+      outOfStockCount
+    },
+    salesTrend,
+    orderStatus: orderStats,
+    customers,
+    customerTypeSales,
+    bestSellingProducts,
+    bestSellingCategories,
+    lowStockProducts,
+    recentOrders
+  };
+}
+
 /**
  * GET /api/admin/dashboard/low-stock
  * Products currently requiring attention (low-stock alerts).
@@ -393,5 +607,9 @@ module.exports = {
   getTopProducts,
   getCategorySales,
   getRecentOrders,
-  getLowStock
+  getLowStock,
+  getAnalytics,
+  getSalesTrend,
+  getCustomerAnalytics,
+  getCustomerTypeSales
 };

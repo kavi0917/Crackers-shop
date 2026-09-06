@@ -32,4 +32,7 @@ router.get('/recent-orders', adminDashboardController.getRecentOrders);
 /* GET /api/admin/dashboard/low-stock */
 router.get('/low-stock', adminDashboardController.getLowStock);
 
+/* GET /api/admin/dashboard/analytics */
+router.get('/analytics', adminDashboardController.getAnalytics);
+
 module.exports = router;

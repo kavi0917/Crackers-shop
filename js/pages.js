@@ -2978,288 +2978,334 @@ async function initAdminDashboard() {
     return;
   }
 
-  try {
-    // KPI cards
-    const summary = await AdminAPI.dashboard.summary();
-    const kpiValues = document.querySelectorAll('.kpi-card b');
-    if (kpiValues.length >= 4) {
-      kpiValues[0].textContent = formatINR(summary.totalSales || 0);
-      kpiValues[1].textContent = (summary.totalOrders || 0).toLocaleString('en-IN');
-      kpiValues[2].textContent = (summary.totalProducts || 0).toLocaleString('en-IN');
-      kpiValues[3].textContent = (summary.totalCustomers || 0).toLocaleString('en-IN');
+  const periodSelect = document.getElementById('dashboard-period');
+  const rangeLabel = document.getElementById('dashboard-range-label');
+  const loadingEl = document.getElementById('dashboard-loading');
+
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const statusColors = { pending:'#f5b301', confirmed:'#2563eb', packed:'#9333ea', delivered:'#16a34a', cancelled:'#9ca3af' };
+  const catColors = ['#f5b301', '#ff7a1a', '#2563eb', '#16a34a', '#9333ea', '#dc2626'];
+  const KPI_IDS = ['kpi-total-sales','kpi-total-orders','kpi-pending-orders','kpi-delivered-orders','kpi-total-products','kpi-total-customers'];
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const num = (v) => Number(v) || 0;
+
+  function setKpis(text) {
+    KPI_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = text; });
+  }
+
+  function emptyState(icon, heading, sub) {
+    const div = document.createElement('div');
+    div.className = 'empty-state';
+    div.style.cssText = 'height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;';
+    div.innerHTML = `<div class="empty-icon"><i class="fas ${icon}"></i></div><h3>${heading}</h3>${sub ? `<p style="color:var(--text-muted); font-size:0.8rem;">${sub}</p>` : ''}`;
+    return div;
+  }
+
+  function rangeText(p) {
+    if (!p || !p.value || p.value === 'all') return 'All time';
+    if (!p.start || !p.end) return '';
+    const s = new Date(p.start), e = new Date(p.end);
+    const d = (x) => x.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (p.value === 'today') return 'Today · ' + d(s);
+    if (p.value === 'this_year') return 'This Year · ' + s.getFullYear();
+    return (p.value === 'week' ? 'Last 7 Days' : 'Last 30 Days') + ' · ' + d(s) + ' → ' + d(e);
+  }
+
+  function renderKpis(s) {
+    const put = (id, v, money) => { const el = document.getElementById(id); if (el) el.textContent = money ? formatINR(v) : num(v).toLocaleString('en-IN'); };
+    put('kpi-total-sales', s.totalSales, true);
+    put('kpi-total-orders', s.totalOrders);
+    put('kpi-pending-orders', s.pendingOrders);
+    put('kpi-delivered-orders', s.deliveredOrders);
+    put('kpi-total-products', s.totalProducts);
+    put('kpi-total-customers', s.totalCustomers);
+  }
+
+    function renderSalesTrend(trend, periodInfo) {
+    const chartBox = document.getElementById('sales-trend-chart');
+    if (!chartBox) return;
+    chartBox.textContent = '';
+    chartBox.style.flexDirection = 'row';
+    const t = trend || {};
+    const sales = Array.isArray(t.sales) ? t.sales : [];
+    if (sales.length === 0) {
+      chartBox.appendChild(emptyState('fa-chart-bar', 'No sales data', 'Sales will appear here once orders are placed.'));
+      return;
     }
-
-    // Recent orders
-    const recentOrders = await AdminAPI.dashboard.recentOrders(5);
-    const recentTable = document.querySelector('.admin-card .data-table tbody');
-    if (recentTable) {
-      recentTable.textContent = '';
-      (recentOrders.orders || []).forEach(o => {
-        const tr = document.createElement('tr');
-        const tdId = document.createElement('td');
-        const b = document.createElement('b');
-        b.textContent = o.orderId || '';
-        tdId.appendChild(b);
-        const tdName = document.createElement('td');
-        tdName.textContent = o.customerName || (o.customer && o.customer.name) || '';
-        const tdDate = document.createElement('td');
-        tdDate.textContent = formatDate(o.createdAt);
-        const tdTotal = document.createElement('td');
-        tdTotal.textContent = formatINR(o.total || o.grandTotal);
-        const tdStatus = document.createElement('td');
-        tdStatus.innerHTML = getOrderBadge(o.status);
-        const tdAction = document.createElement('td');
-        const viewBtn = document.createElement('button');
-        viewBtn.className = 'btn btn-sm btn-ghost';
-        viewBtn.dataset.viewOrder = o.id;
-        viewBtn.textContent = 'View';
-        tdAction.appendChild(viewBtn);
-        tr.appendChild(tdId);
-        tr.appendChild(tdName);
-        tr.appendChild(tdDate);
-        tr.appendChild(tdTotal);
-        tr.appendChild(tdStatus);
-        tr.appendChild(tdAction);
-        recentTable.appendChild(tr);
-      });
-
-      // View order details handler
-      recentTable.querySelectorAll('[data-view-order]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          try {
-            const res = await AdminAPI.orders.detail(btn.dataset.viewOrder);
-            const order = res.order || res;
-            const modal = document.getElementById('order-details-modal');
-            if (!modal) return;
-            const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
-            set('od-id', order.orderId);
-            set('od-date', formatDateTime(order.createdAt));
-            set('od-customer', (order.customer && order.customer.name) || '');
-            set('od-phone', (order.customer && order.customer.phone) || '');
-            set('od-email', (order.customer && order.customer.email) || '');
-            set('od-status', order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : '');
-            set('od-payment', (order.payment && order.payment.method) || '');
-            set('od-total', formatINR(order.pricing && order.pricing.total));
-            const addr = order.deliveryAddress;
-            set('od-address', addr ? [addr.address, addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') : '');
-            const itemsWrap = document.getElementById('od-items');
-            if (itemsWrap) {
-              itemsWrap.textContent = '';
-              (order.items || []).forEach(item => {
-                const row = document.createElement('div');
-                row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);';
-                const left = document.createElement('span');
-                left.textContent = (item.productName || '') + ' × ' + (item.quantity || 0);
-                const right = document.createElement('span');
-                right.textContent = formatINR(item.subtotal || 0);
-                row.appendChild(left);
-                row.appendChild(right);
-                itemsWrap.appendChild(row);
-              });
-            }
-            modal.classList.add('open');
-          } catch (e) { showToast('Error', safeError(e), 'error'); }
-        });
-      });
-    }
-
-    // Low stock
-    try {
-      const lowStock = await AdminAPI.dashboard.lowStock();
-      const lowStockItems = lowStock.products || lowStock.items || [];
-      const lowStockEl = document.getElementById('low-stock-card');
-      if (lowStockEl) {
-        const items = lowStockEl.querySelectorAll('.low-stock-item');
-        if (lowStockItems.length === 0) {
-          // Empty state
-          items.forEach(el => {
-            const img = el.querySelector('img');
-            if (img) img.style.display = 'none';
-            const info = el.querySelector('.ls-info');
-            if (info) {
-              const b = info.querySelector('b');
-              const span = info.querySelector('span');
-              if (b) b.textContent = 'No low-stock products';
-              if (span) span.textContent = 'All products are sufficiently stocked.';
-            }
-            const pill = el.querySelector('.stock-pill');
-            if (pill) pill.style.display = 'none';
-          });
-        } else {
-          items.forEach((el, i) => {
-            if (lowStockItems[i]) {
-              const item = lowStockItems[i];
-              const img = el.querySelector('img');
-              const imgSrc = item.mainImage || item.image || (item.images && item.images.length > 0 ? item.images[0] : '');
-              if (img) {
-                if (imgSrc) {
-                  safeSetImgSrc(img, imgSrc);
-                } else {
-                  // Safe fallback placeholder — no broken image icon
-                  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#f0f0f0" rx="8"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-size="16">📦</text></svg>'
-                  );
-                }
-              }
-              el.querySelector('.ls-info b').textContent = item.name;
-              el.querySelector('.ls-info span').textContent = `${item.stock} left · Reorder at ${item.reorderLevel}`;
-              const isOut = item.status === 'out_of_stock';
-              el.querySelector('.stock-pill').textContent = isOut ? 'Out' : 'Low';
-              el.querySelector('.stock-pill').className = `stock-pill ${isOut ? 'stock-out' : 'stock-low'}`;
-            } else {
-              el.style.display = 'none';
-            }
-          });
-        }
+    const granularity = t.granularity || 'month';
+    const map = {};
+    sales.forEach(s => {
+      let key;
+      if (granularity === 'hour') key = s.period.year + '-' + pad(s.period.month) + '-' + pad(s.period.day) + '-' + pad(s.period.hour);
+      else if (granularity === 'day') key = s.period.year + '-' + pad(s.period.month) + '-' + pad(s.period.day);
+      else key = s.period.year + '-' + pad(s.period.month);
+      map[key] = num(s.revenue);
+    });
+    const filled = [];
+    if (granularity === 'hour' && periodInfo && periodInfo.start) {
+      const day = new Date(periodInfo.start);
+      for (let h = 0; h < 24; h++) {
+        const key = day.getFullYear() + '-' + pad(day.getMonth() + 1) + '-' + pad(day.getDate()) + '-' + pad(h);
+        filled.push({ key, label: pad(h) + ':00', revenue: map[key] || 0 });
       }
-    } catch (e) {
-      // Low stock API failed — replace permanent Loading state with an error/empty state
-      const lowStockEl = document.getElementById('low-stock-card');
-      if (lowStockEl) {
-        lowStockEl.querySelectorAll('.low-stock-item').forEach(el => {
-          const img = el.querySelector('img');
-          if (img) img.style.display = 'none';
-          const info = el.querySelector('.ls-info');
-          if (info) {
-            const b = info.querySelector('b');
-            const span = info.querySelector('span');
-            if (b) b.textContent = 'Unable to load stock data';
-            if (span) span.textContent = 'Please try again later.';
-          }
-          const pill = el.querySelector('.stock-pill');
-          if (pill) pill.style.display = 'none';
-        });
+    } else if (granularity === 'day' && periodInfo && periodInfo.start && periodInfo.end) {
+      const cur = new Date(periodInfo.start);
+      const last = new Date(periodInfo.end);
+      while (cur <= last) {
+        const key = cur.getFullYear() + '-' + pad(cur.getMonth() + 1) + '-' + pad(cur.getDate());
+        filled.push({ key, label: cur.getDate() + ' ' + monthNames[cur.getMonth()], revenue: map[key] || 0 });
+        cur.setDate(cur.getDate() + 1);
       }
+    } else {
+      sales.forEach(s => {
+        filled.push({ key: s.period.year + '-' + pad(s.period.month), label: monthNames[num(s.period.month) - 1], revenue: num(s.revenue) });
+      });
     }
-
-    // Sales overview chart
-    const salesData = await AdminAPI.dashboard.sales();
-    const chartBox = document.querySelector('.admin-grid .admin-card .chart-box');
-    if (chartBox && salesData.sales && salesData.sales.length > 0) {
-      const maxVal = Math.max(...salesData.sales.map(s => s.revenue || 0), 1);
-      chartBox.textContent = '';
-      salesData.sales.forEach(s => {
-        const p2 = s.period || {};
-        let label = '';
-        if (p2.year && p2.month) {
-          const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-          label = monthNames[(p2.month - 1) % 12] + (p2.day ? ' ' + p2.day : '');
-        } else if (p2.year) {
-          label = String(p2.year);
-        }
-        const barDiv = document.createElement('div');
-        barDiv.className = 'bar';
-        barDiv.style.height = Math.max(5, Math.round((s.revenue || 0) / maxVal * 100)) + '%';
-        barDiv.title = formatINR(s.revenue || 0);
+    const maxVal = Math.max(...filled.map(f => f.revenue), 1);
+    const labelStep = filled.length > 12 ? Math.ceil(filled.length / 8) : 1;
+    filled.forEach((f, i) => {
+      const barDiv = document.createElement('div');
+      barDiv.className = 'bar';
+      barDiv.style.height = Math.max(4, Math.round(f.revenue / maxVal * 100)) + '%';
+      barDiv.title = f.label + ' — ' + formatINR(f.revenue);
+      if (i % labelStep === 0) {
         const labelSpan = document.createElement('span');
         labelSpan.className = 'bar-label';
-        labelSpan.textContent = label;
+        labelSpan.textContent = f.label;
         barDiv.appendChild(labelSpan);
-        chartBox.appendChild(barDiv);
-      });
-    } else if (chartBox) {
-      chartBox.innerHTML = `
-        <div class="empty-state" style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;">
-          <div class="empty-icon"><i class="fas fa-chart-bar"></i></div>
-          <h3>No sales data</h3>
-          <p style="color:var(--text-muted); font-size:0.8rem;">Sales will appear here once orders are placed.</p>
-        </div>
-      `;
-    }
-
-    // Orders by status
-    const orderStats = await AdminAPI.dashboard.orders();
-    const donut = document.querySelector('.donut');
-    const donutCenter = document.querySelector('.donut-center b');
-    const legend = document.querySelector('.legend');
-    if (donut && orderStats.byStatus) {
-      const statuses = orderStats.byStatus;
-      const total = statuses.reduce((s, st) => s + st.count, 0) || 1;
-      const colors = { delivered: '#16a34a', confirmed: '#2563eb', packed: '#d97706', pending: '#dc2626', cancelled: '#6b7280' };
-      let gradient = '';
-      let cumulative = 0;
-      const legendItems = [];
-      statuses.forEach(st => {
-        const pct = Math.round(st.count / total * 100);
-        if (pct > 0) {
-          gradient += `${colors[st.status] || '#6b7280'} ${cumulative}% ${cumulative + pct}%, `;
-          cumulative += pct;
-          legendItems.push({ color: colors[st.status] || '#6b7280', label: st.status.charAt(0).toUpperCase() + st.status.slice(1), pct });
-        }
-      });
-      if (gradient) {
-        donut.style.background = `conic-gradient(${gradient.slice(0, -2)})`;
       }
-      if (donutCenter) donutCenter.textContent = total.toLocaleString('en-IN');
+      chartBox.appendChild(barDiv);
+    });
+  }
+
+    function renderOrderStatus(os) {
+    const donut = document.getElementById('order-status-donut');
+    const donutCenter = document.getElementById('order-status-total');
+    const legend = document.getElementById('order-status-legend');
+    const byStatus = (os && Array.isArray(os.byStatus)) ? os.byStatus : [];
+    const total = num(os && os.total) || byStatus.reduce((s, st) => s + num(st.count), 0);
+    if (legend) legend.textContent = '';
+    if (donut) donut.style.background = 'conic-gradient(#e5e7eb 0% 100%)';
+    if (donutCenter) donutCenter.textContent = total.toLocaleString('en-IN');
+    if (total === 0) {
       if (legend) {
-        legend.textContent = '';
-        legendItems.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'legend-item';
-          const dot = document.createElement('span');
-          dot.className = 'legend-dot';
-          dot.style.background = item.color;
-          div.appendChild(dot);
-          div.appendChild(document.createTextNode(' ' + item.label + ' (' + item.pct + ')%'));
-          legend.appendChild(div);
-        });
+        const div = document.createElement('div');
+        div.className = 'legend-item';
+        const dot = document.createElement('span');
+        dot.className = 'legend-dot';
+        dot.style.background = '#e5e7eb';
+        div.appendChild(dot);
+        div.appendChild(document.createTextNode(' No orders in this period'));
+        legend.appendChild(div);
       }
+      return;
     }
-
-    // Top products
-    const topProducts = await AdminAPI.dashboard.topProducts(5);
-    const topTable = document.querySelectorAll('.admin-grid .admin-card .data-table tbody')[1];
-    if (topTable) {
-      topTable.textContent = '';
-      (topProducts.products || []).forEach(p2 => {
-        const tr = document.createElement('tr');
-        const tdProd = document.createElement('td');
-        const prodDiv = document.createElement('div');
-        prodDiv.className = 'table-product';
-        const img = document.createElement('img');
-        // Backend returns the image in the `images` array for admin products
-        img.src = safeImg(p2.mainImage || (p2.images && p2.images.length > 0 ? p2.images[0] : '') || p2.image || '');
-        img.alt = '';
-        const infoDiv = document.createElement('div');
-        const nameB = document.createElement('b');
-        nameB.textContent = p2.productName || '';
-        infoDiv.appendChild(nameB);
-        prodDiv.appendChild(img);
-        prodDiv.appendChild(infoDiv);
-        tdProd.appendChild(prodDiv);
-        const tdQty = document.createElement('td');
-        tdQty.textContent = String(p2.quantitySold || 0);
-        const tdRev = document.createElement('td');
-        tdRev.textContent = formatINR(p2.revenue || 0);
-        tr.appendChild(tdProd);
-        tr.appendChild(tdQty);
-        tr.appendChild(tdRev);
-        topTable.appendChild(tr);
+    let gradient = '', cum = 0;
+    const items = [];
+    byStatus.forEach(st => {
+      const pct = Math.round(num(st.count) / total * 100);
+      if (pct > 0) {
+        gradient += `${statusColors[st.status] || '#6b7280'} ${cum}% ${cum + pct}%, `;
+        cum += pct;
+        items.push({ color: statusColors[st.status] || '#6b7280', label: st.status.charAt(0).toUpperCase() + st.status.slice(1), pct });
+      }
+    });
+    if (donut && gradient) donut.style.background = `conic-gradient(${gradient.slice(0, -2)})`;
+    if (legend) {
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'legend-item';
+        const dot = document.createElement('span');
+        dot.className = 'legend-dot';
+        dot.style.background = item.color;
+        div.appendChild(dot);
+        div.appendChild(document.createTextNode(' ' + item.label + ' (' + item.pct + '%)'));
+        legend.appendChild(div);
       });
     }
+  }
 
-    // Category sales
-    const catSales = await AdminAPI.dashboard.categorySales();
-    const catDonut = document.querySelectorAll('.donut')[1];
-    const catLegend = document.querySelectorAll('.legend')[1];
-    const catCenter = document.querySelectorAll('.donut-center b')[1];
-    const cats = (catSales && catSales.categories) ? catSales.categories : [];
-    const colors = ['#f5b301', '#ff7a1a', '#2563eb', '#16a34a', '#9333ea', '#dc2626'];
+  function renderRecentOrders(orders) {
+    const tbody = document.getElementById('recent-orders-tbody');
+    if (!tbody) return;
+    tbody.textContent = '';
+    const list = Array.isArray(orders) ? orders : [];
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No orders yet.</td></tr>';
+      return;
+    }
+    list.forEach(o => {
+      const tr = document.createElement('tr');
+      const tdId = document.createElement('td');
+      const b = document.createElement('b');
+      b.textContent = o.orderId || '';
+      tdId.appendChild(b);
+      const tdName = document.createElement('td');
+      tdName.textContent = o.customerName || (o.customer && o.customer.name) || '';
+      const tdDate = document.createElement('td');
+      tdDate.textContent = formatDate(o.createdAt);
+      const tdTotal = document.createElement('td');
+      tdTotal.textContent = formatINR(o.total || o.grandTotal);
+      const tdStatus = document.createElement('td');
+      tdStatus.innerHTML = getOrderBadge(o.status);
+      const tdAction = document.createElement('td');
+      const viewBtn = document.createElement('button');
+      viewBtn.className = 'btn btn-sm btn-ghost';
+      viewBtn.dataset.viewOrder = o.id;
+      viewBtn.textContent = 'View';
+      tdAction.appendChild(viewBtn);
+      tr.appendChild(tdId);
+      tr.appendChild(tdName);
+      tr.appendChild(tdDate);
+      tr.appendChild(tdTotal);
+      tr.appendChild(tdStatus);
+      tr.appendChild(tdAction);
+      tbody.appendChild(tr);
+    });
+    tbody.querySelectorAll('[data-view-order]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          const res = await AdminAPI.orders.detail(btn.dataset.viewOrder);
+          const order = res.order || res;
+          const modal = document.getElementById('order-details-modal');
+          if (!modal) return;
+          const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+          set('od-id', order.orderId);
+          set('od-date', formatDateTime(order.createdAt));
+          set('od-customer', (order.customer && order.customer.name) || '');
+          set('od-phone', (order.customer && order.customer.phone) || '');
+          set('od-email', (order.customer && order.customer.email) || '');
+          set('od-status', order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : '');
+          set('od-payment', (order.payment && order.payment.method) || '');
+          set('od-total', formatINR(order.pricing && order.pricing.total));
+          const addr = order.deliveryAddress;
+          set('od-address', addr ? [addr.address, addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') : '');
+          const itemsWrap = document.getElementById('od-items');
+          if (itemsWrap) {
+            itemsWrap.textContent = '';
+            (order.items || []).forEach(item => {
+              const row = document.createElement('div');
+              row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);';
+              const left = document.createElement('span');
+              left.textContent = (item.productName || '') + ' × ' + (item.quantity || 0);
+              const right = document.createElement('span');
+              right.textContent = formatINR(item.subtotal || 0);
+              row.appendChild(left);
+              row.appendChild(right);
+              itemsWrap.appendChild(row);
+            });
+          }
+          modal.classList.add('open');
+        } catch (e) { showToast('Error', safeError(e), 'error'); }
+      });
+    });
+  }
 
-    // Backend returns flat [{ category, quantitySold, revenue, orderCount }]
-    // Map: category → label, revenue → donut value
-    const validCats = cats
-      .map(c => ({
-        label: String(c && c.category ? c.category : 'Unknown'),
-        value: Number(c && c.revenue) || 0
-      }))
+    function renderLowStock(list) {
+    const lowStockEl = document.getElementById('low-stock-card');
+    if (!lowStockEl) return;
+    const items = Array.isArray(list) ? list : [];
+    lowStockEl.querySelectorAll('.low-stock-item').forEach((el, i) => {
+      if (items[i]) {
+        const item = items[i];
+        el.style.display = 'flex';
+        const img = el.querySelector('img');
+        const imgSrc = item.mainImage || item.image || (item.images && item.images.length > 0 ? item.images[0] : '');
+        if (img) {
+          if (imgSrc) {
+            safeSetImgSrc(img, imgSrc);
+          } else {
+            img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+              '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#f0f0f0" rx="8"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-size="16">📦</text></svg>'
+            );
+          }
+          img.style.display = '';
+        }
+        const info = el.querySelector('.ls-info');
+        if (info) {
+          const b = info.querySelector('b');
+          const span = info.querySelector('span');
+          if (b) b.textContent = item.name;
+          if (span) span.textContent = `${item.stock} left · Reorder at ${item.reorderLevel}`;
+        }
+        const pill = el.querySelector('.stock-pill');
+        if (pill) {
+          pill.style.display = '';
+          pill.textContent = item.stock > 0 ? 'Low' : 'Out';
+          pill.className = 'stock-pill ' + (item.stock > 0 ? 'stock-low' : 'stock-out');
+        }
+      } else {
+        el.style.display = 'none';
+      }
+    });
+    if (items.length === 0) {
+      const first = lowStockEl.querySelector('.low-stock-item');
+      if (first) {
+        first.style.display = 'flex';
+        const img = first.querySelector('img');
+        if (img) img.style.display = 'none';
+        const info = first.querySelector('.ls-info');
+        if (info) {
+          const b = info.querySelector('b');
+          const span = info.querySelector('span');
+          if (b) b.textContent = 'No low-stock products';
+          if (span) span.textContent = 'All products are sufficiently stocked.';
+        }
+        const pill = first.querySelector('.stock-pill');
+        if (pill) pill.style.display = 'none';
+      }
+    }
+  }
+
+  function renderTopProducts(products) {
+    const tbody = document.getElementById('top-products-tbody');
+    if (!tbody) return;
+    tbody.textContent = '';
+    const list = Array.isArray(products) ? products : [];
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">No best-selling data for this period.</td></tr>';
+      return;
+    }
+    list.forEach(p2 => {
+      const tr = document.createElement('tr');
+      const tdProd = document.createElement('td');
+      const prodDiv = document.createElement('div');
+      prodDiv.className = 'table-product';
+      const img = document.createElement('img');
+      img.src = safeImg(p2.mainImage || (p2.images && p2.images.length > 0 ? p2.images[0] : '') || p2.image || '');
+      img.alt = '';
+      const infoDiv = document.createElement('div');
+      const nameB = document.createElement('b');
+      nameB.textContent = p2.productName || '';
+      infoDiv.appendChild(nameB);
+      prodDiv.appendChild(img);
+      prodDiv.appendChild(infoDiv);
+      tdProd.appendChild(prodDiv);
+      const tdQty = document.createElement('td');
+      tdQty.textContent = String(p2.quantitySold || 0);
+      const tdRev = document.createElement('td');
+      tdRev.textContent = formatINR(p2.revenue || 0);
+      tr.appendChild(tdProd);
+      tr.appendChild(tdQty);
+      tr.appendChild(tdRev);
+      tbody.appendChild(tr);
+    });
+  }
+
+    function renderCategorySales(cats) {
+    const donut = document.getElementById('category-sales-donut');
+    const center = document.getElementById('cat-donut-center');
+    const legend = document.getElementById('category-sales-legend');
+    const list = Array.isArray(cats) ? cats : [];
+    const valid = list
+      .map(c => ({ label: String(c && c.category ? c.category : 'Unknown'), value: num(c && c.revenue) }))
       .filter(c => c.value > 0);
-
-    if (catDonut && validCats.length === 0) {
-      catDonut.style.background = 'conic-gradient(#e5e7eb 0% 100%)';
-      if (catCenter) catCenter.textContent = formatINR(0);
-      if (catLegend) {
-        catLegend.textContent = '';
+    if (legend) legend.textContent = '';
+    if (donut) donut.style.background = 'conic-gradient(#e5e7eb 0% 100%)';
+    if (center) center.textContent = formatINR(0);
+    if (valid.length === 0) {
+      if (legend) {
         const div = document.createElement('div');
         div.className = 'legend-item';
         const dot = document.createElement('span');
@@ -3267,42 +3313,106 @@ async function initAdminDashboard() {
         dot.style.background = '#e5e7eb';
         div.appendChild(dot);
         div.appendChild(document.createTextNode(' No category sales data yet'));
-        catLegend.appendChild(div);
+        legend.appendChild(div);
       }
-    } else if (catDonut) {
-      const total = validCats.reduce((s, c) => s + c.value, 0);
-      let gradient = '';
-      let cumulative = 0;
-      const legendItems = [];
-      validCats.forEach((c, i) => {
-        const pct = Math.round(c.value / total * 100);
-        if (pct > 0) {
-          gradient += `${colors[i % colors.length]} ${cumulative}% ${cumulative + pct}%, `;
-          cumulative += pct;
-          legendItems.push({ color: colors[i % colors.length], label: c.label, pct });
-        }
-      });
-      if (gradient) {
-        catDonut.style.background = `conic-gradient(${gradient.slice(0, -2)})`;
-      }
-      if (catCenter) catCenter.textContent = formatINR(total);
-      if (catLegend) {
-        catLegend.textContent = '';
-        legendItems.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'legend-item';
-          const dot = document.createElement('span');
-          dot.className = 'legend-dot';
-          dot.style.background = item.color;
-          div.appendChild(dot);
-          div.appendChild(document.createTextNode(' ' + item.label + ' (' + item.pct + '%)'));
-          catLegend.appendChild(div);
-        });
-      }
+      return;
     }
+    const total = valid.reduce((s, c) => s + c.value, 0);
+    if (center) center.textContent = formatINR(total);
+    let gradient = '', cum = 0;
+    const legendItems = [];
+    valid.forEach((c, i) => {
+      const pct = Math.round(c.value / total * 100);
+      if (pct > 0) {
+        gradient += `${catColors[i % catColors.length]} ${cum}% ${cum + pct}%, `;
+        cum += pct;
+        legendItems.push({ color: catColors[i % catColors.length], label: c.label, pct });
+      }
+    });
+    if (donut && gradient) donut.style.background = `conic-gradient(${gradient.slice(0, -2)})`;
+    if (legend) {
+      legendItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'legend-item';
+        const dot = document.createElement('span');
+        dot.className = 'legend-dot';
+        dot.style.background = item.color;
+        div.appendChild(dot);
+        div.appendChild(document.createTextNode(' ' + item.label + ' (' + item.pct + '%)'));
+        legend.appendChild(div);
+      });
+    }
+  }
 
-  } catch (e) {
-    showToast('Error', safeError(e), 'error');
+  function renderCustomerAnalytics(c) {
+    const c2 = c || {};
+    const put = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = num(v).toLocaleString('en-IN'); };
+    put('cust-total', c2.total);
+    put('cust-retail', c2.retail);
+    put('cust-wholesale', c2.wholesale);
+    put('cust-new', c2.newCustomers);
+  }
+
+  function renderRetailWholesale(c) {
+    const c2 = c || {};
+    const retail = c2.retail || {};
+    const wholesale = c2.wholesale || {};
+    const rSales = num(retail.sales);
+    const wSales = num(wholesale.sales);
+    const put = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+    put('rw-retail-sales', formatINR(rSales));
+    put('rw-retail-orders', `(${num(retail.orderCount)} orders)`);
+    put('rw-wholesale-sales', formatINR(wSales));
+    put('rw-wholesale-orders', `(${num(wholesale.orderCount)} orders)`);
+    const total = rSales + wSales;
+    const barR = document.getElementById('rw-bar-retail');
+    const barW = document.getElementById('rw-bar-wholesale');
+    if (total <= 0) {
+      if (barR) barR.style.width = '0%';
+      if (barW) barW.style.width = '0%';
+    } else {
+      if (barR) barR.style.width = Math.round(rSales / total * 100) + '%';
+      if (barW) barW.style.width = Math.max(0, 100 - Math.round(rSales / total * 100)) + '%';
+    }
+  }
+
+  async function loadDashboard(period) {
+    if (loadingEl) loadingEl.style.display = 'inline-block';
+    if (periodSelect) periodSelect.disabled = true;
+    if (rangeLabel) rangeLabel.textContent = 'Loading…';
+    setKpis('…');
+    try {
+      const analytics = await AdminAPI.dashboard.analytics({ period });
+      renderKpis(analytics.summary || {});
+      renderSalesTrend(analytics.salesTrend, analytics.period);
+      renderOrderStatus(analytics.orderStatus);
+      renderRecentOrders(analytics.recentOrders);
+      renderLowStock(analytics.lowStockProducts);
+      renderTopProducts(analytics.bestSellingProducts);
+      renderCategorySales(analytics.bestSellingCategories);
+      renderCustomerAnalytics(analytics.customers);
+      renderRetailWholesale(analytics.customerTypeSales);
+      if (rangeLabel) rangeLabel.textContent = rangeText(analytics.period);
+    } catch (e) {
+      setKpis('—');
+      const chartBox = document.getElementById('sales-trend-chart');
+      if (chartBox) {
+        chartBox.textContent = '';
+        chartBox.appendChild(emptyState('fa-chart-bar', 'Unable to load sales data', 'Please try again later.'));
+      }
+      if (rangeLabel) rangeLabel.textContent = 'Unable to load data';
+      showToast('Error', safeError(e), 'error');
+    } finally {
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (periodSelect) periodSelect.disabled = false;
+    }
+  }
+
+  // Initial render (All Time — preserves the original default view)
+  loadDashboard('all');
+
+  if (periodSelect) {
+    periodSelect.addEventListener('change', () => loadDashboard(periodSelect.value));
   }
 }
 

@@ -68,12 +68,28 @@
       <!-- ============ DASHBOARD SECTION ============ -->
       <div class="admin-section" id="admin-dashboard">
 
+        <!-- Date Range Filter -->
+        <div class="dashboard-filter-bar">
+          <div class="dashboard-filter-group">
+            <label for="dashboard-period">Analytics Period</label>
+            <select id="dashboard-period" class="form-control">
+              <option value="all" selected>All Time</option>
+              <option value="today">Today</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+              <option value="this_year">This Year</option>
+            </select>
+          </div>
+          <span class="dashboard-range-label" id="dashboard-range-label"></span>
+          <span class="dashboard-loading" id="dashboard-loading" style="display:none;">Loading…</span>
+        </div>
+
         <!-- KPI Cards -->
-        <div class="kpi-grid">
+        <div class="kpi-grid kpi-grid-dash">
           <div class="kpi-card">
             <div class="kpi-icon gold"><i class="fas fa-rupee-sign"></i></div>
             <div>
-              <b>₹0</b>
+              <b id="kpi-total-sales">—</b>
               <span>Total Sales</span>
               <div class="kpi-trend"><i class="fas fa-arrow-up"></i> Live data</div>
             </div>
@@ -81,25 +97,37 @@
           <div class="kpi-card">
             <div class="kpi-icon blue"><i class="fas fa-shopping-cart"></i></div>
             <div>
-              <b>0</b>
+              <b id="kpi-total-orders">—</b>
               <span>Total Orders</span>
               <div class="kpi-trend"><i class="fas fa-arrow-up"></i> Live data</div>
             </div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-icon green"><i class="fas fa-box-open"></i></div>
+            <div class="kpi-icon orange"><i class="fas fa-hourglass-half"></i></div>
             <div>
-              <b>0</b>
-              <span>Total Products</span>
-              <div class="kpi-trend"><i class="fas fa-arrow-up"></i> Live data</div>
+              <b id="kpi-pending-orders">—</b>
+              <span>Pending Orders</span>
             </div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-icon purple"><i class="fas fa-users"></i></div>
+            <div class="kpi-icon green"><i class="fas fa-check-circle"></i></div>
             <div>
-              <b>0</b>
+              <b id="kpi-delivered-orders">—</b>
+              <span>Delivered Orders</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon purple"><i class="fas fa-box-open"></i></div>
+            <div>
+              <b id="kpi-total-products">—</b>
+              <span>Total Products</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon teal"><i class="fas fa-users"></i></div>
+            <div>
+              <b id="kpi-total-customers">—</b>
               <span>Total Customers</span>
-              <div class="kpi-trend"><i class="fas fa-arrow-up"></i> Live data</div>
             </div>
           </div>
         </div>
@@ -107,21 +135,21 @@
         <!-- Charts -->
         <div class="admin-grid">
           <div class="admin-card">
-            <h3>Sales Overview <a href="#" class="card-link" data-admin-section="reports">View Report <i class="fas fa-arrow-right"></i></a></h3>
-            <div class="chart-box">
+            <h3>Sales Trend <a href="#" class="card-link" data-admin-section="reports">View Report <i class="fas fa-arrow-right"></i></a></h3>
+            <div class="chart-box" id="sales-trend-chart">
               <div class="bar" style="height:5%;"><span class="bar-label">Loading...</span></div>
             </div>
           </div>
           <div class="admin-card">
             <h3>Orders by Status</h3>
             <div class="donut-wrap">
-              <div class="donut" style="background: conic-gradient(#16a34a 0% 100%);">
+              <div class="donut" id="order-status-donut" style="background: conic-gradient(#16a34a 0% 100%);">
                 <div class="donut-center">
-                  <b>0</b>
+                  <b id="order-status-total">0</b>
                   <span>Total Orders</span>
                 </div>
               </div>
-              <div class="legend">
+              <div class="legend" id="order-status-legend">
                 <div class="legend-item"><span class="legend-dot" style="background:#16a34a;"></span> Loading...</div>
               </div>
             </div>
@@ -144,7 +172,7 @@
                     <th>Action</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="recent-orders-tbody">
                   <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Loading orders...</td></tr>
                 </tbody>
               </table>
@@ -202,7 +230,7 @@
                     <th>Revenue</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="top-products-tbody">
                   <tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Loading...</td></tr>
                 </tbody>
               </table>
@@ -211,15 +239,49 @@
           <div class="admin-card">
             <h3>Category-wise Sales</h3>
             <div class="donut-wrap">
-              <div class="donut" style="background: conic-gradient(#f5b301 0% 100%);">
+              <div class="donut" id="category-sales-donut" style="background: conic-gradient(#f5b301 0% 100%);">
                 <div class="donut-center">
-                  <b>₹0</b>
+                  <b id="cat-donut-center">₹0</b>
                   <span>Total Sales</span>
                 </div>
               </div>
-              <div class="legend">
+              <div class="legend" id="category-sales-legend">
                 <div class="legend-item"><span class="legend-dot" style="background:#f5b301;"></span> Loading...</div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Analytics + Retail vs Wholesale -->
+        <div class="admin-grid">
+          <div class="admin-card">
+            <h3>Customer Analytics</h3>
+            <div class="dash-mini-grid">
+              <div class="dash-mini-stat"><b id="cust-total">—</b><span>Total Customers</span></div>
+              <div class="dash-mini-stat"><b id="cust-retail">—</b><span>Retail Customers</span></div>
+              <div class="dash-mini-stat"><b id="cust-wholesale">—</b><span>Wholesale Customers</span></div>
+              <div class="dash-mini-stat"><b id="cust-new">—</b><span>New Customers</span></div>
+            </div>
+            <p class="dash-note">New Customers = active customers who registered in the selected period (customer.createdAt).</p>
+          </div>
+          <div class="admin-card">
+            <h3>Retail vs Wholesale Sales</h3>
+            <div id="rw-compare">
+              <div class="rw-row">
+                <span class="rw-label"><i class="fas fa-user"></i> Retail</span>
+                <b id="rw-retail-sales">—</b>
+                <span class="rw-count" id="rw-retail-orders"></span>
+              </div>
+              <div class="rw-bar-track">
+                <div class="rw-bar-fill rw-fill-retail" id="rw-bar-retail" style="width:0%"></div>
+                <div class="rw-bar-fill rw-fill-wholesale" id="rw-bar-wholesale" style="width:0%"></div>
+              </div>
+              <div class="rw-row">
+                <span class="rw-label"><i class="fas fa-store"></i> Wholesale</span>
+                <b id="rw-wholesale-sales">—</b>
+                <span class="rw-count" id="rw-wholesale-orders"></span>
+              </div>
+              <p class="dash-note">Uses the customer type snapshot stored on each order — stored order totals, discounts never recalculated.</p>
             </div>
           </div>
         </div>
@@ -1184,8 +1246,8 @@
   </div>
 
   <script src="js/main.js?v=2"></script>
-  <script src="js/api.js?v=3"></script>
-  <script src="js/pages.js?v=4"></script>
+  <script src="js/api.js?v=4"></script>
+  <script src="js/pages.js?v=5"></script>
   <script>
     // Admin section switching
     document.querySelectorAll('[data-admin-section]').forEach(link => {
