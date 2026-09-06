@@ -2324,6 +2324,139 @@ async function initCheckoutPageAPI() {
   });
 }
 
+/* ============ ORDER TRACKING TIMELINE ============ */
+/* Customer-facing order lifecycle. Keys are the EXACT backend order
+   statuses (pending/confirmed/packed/delivered/cancelled) — nothing is
+   invented here. Labels are friendly translations for the timeline. */
+const ORDER_LIFECYCLE = [
+  { key: 'pending', label: 'Order Placed' },
+  { key: 'confirmed', label: 'Confirmed' },
+  { key: 'packed', label: 'Packed' },
+  { key: 'delivered', label: 'Delivered' }
+];
+const ORDER_CANCELLED_LABEL = 'Cancelled';
+
+/* Map status -> latest changedAt from the order's statusHistory. */
+function getStatusHistoryMap(order) {
+  const map = {};
+  if (order && Array.isArray(order.statusHistory)) {
+    order.statusHistory.forEach((h) => {
+      if (h && h.status && !map[h.status]) map[h.status] = h.changedAt || null;
+    });
+  }
+  return map;
+}
+
+/* For a cancelled order, return the furthest lifecycle status actually
+   reached before the cancellation (from statusHistory). Defaults to
+   'pending' so a cancelled-at-place order still shows "Order Placed". */
+function getLastActiveStatus(order) {
+  const history = order && Array.isArray(order.statusHistory) ? order.statusHistory : [];
+  const reached = [];
+  history.forEach((h) => {
+    if (h && h.status && h.status !== 'cancelled' && ORDER_LIFECYCLE.some((s) => s.key === h.status)) {
+      reached.push(h.status);
+    }
+  });
+  const active = reached[reached.length - 1] || (order && order.status);
+  return ORDER_LIFECYCLE.some((s) => s.key === active) ? active : 'pending';
+}
+
+/* Build the tracking timeline steps for an order from its actual
+   backend status + statusHistory.
+   state is one of: 'completed' | 'current' | 'pending' | 'cancelled'.
+   Cancelled orders show the normal lifecycle up to the cancellation point
+   followed by a terminal ✕ Cancelled step (never a future step). */
+function buildTimelineSteps(order) {
+  const status = order && order.status;
+  const historyMap = getStatusHistoryMap(order);
+  const steps = [];
+
+  if (status === 'cancelled') {
+    const lastActive = getLastActiveStatus(order);
+    const activeIdx = Math.max(0, ORDER_LIFECYCLE.findIndex((s) => s.key === lastActive));
+    ORDER_LIFECYCLE.slice(0, activeIdx + 1).forEach((s) => {
+      steps.push({ key: s.key, label: s.label, state: 'completed', date: historyMap[s.key] || null });
+    });
+    steps.push({
+      key: 'cancelled',
+      label: ORDER_CANCELLED_LABEL,
+      state: 'cancelled',
+      date: historyMap.cancelled || null
+    });
+    return steps;
+  }
+
+  const currentIdx = ORDER_LIFECYCLE.findIndex((s) => s.key === status);
+  ORDER_LIFECYCLE.forEach((s, i) => {
+    let state = 'pending';
+    if (currentIdx >= 0 && i < currentIdx) state = 'completed';
+    else if (currentIdx >= 0 && i === currentIdx) state = 'current';
+    steps.push({ key: s.key, label: s.label, state, date: historyMap[s.key] || null });
+  });
+  return steps;
+}
+
+function timelineStepIcon(step) {
+  if (step.state === 'completed') return '<i class="fas fa-check"></i>';
+  if (step.state === 'current') return '<i class="fas fa-circle" style="font-size:0.45rem;"></i>';
+  if (step.state === 'cancelled') return '<i class="fas fa-times"></i>';
+  return ''; // pending -> hollow dot (CSS)
+}
+
+/* Vertical tracking timeline (used on the order detail page). */
+function renderOrderTimeline(order) {
+  const steps = buildTimelineSteps(order);
+  if (steps.length === 0) return '<p style="color:var(--text-muted); margin:0;">No tracking information available.</p>';
+  return `
+    <div class="order-timeline">
+      ${steps.map((s, i) => `
+        <div class="timeline-step ${s.state}">
+          <div class="tl-marker">
+            <div class="tl-dot">${timelineStepIcon(s)}</div>
+            ${i < steps.length - 1 ? '<div class="tl-line"></div>' : ''}
+          </div>
+          <div class="tl-content">
+            <div class="tl-label">${escapeHTML(s.label)}</div>
+            ${s.date ? `<div class="tl-date">${formatDateTime(s.date)}</div>` : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* Compact horizontal progress tracker (used inside order cards on the
+   orders list page). Cancelled orders render the reached lifecycle steps
+   as done, then a terminal ✕ Cancelled step. */
+function renderOrderProgressTracker(order) {
+  const status = order && order.status;
+  if (status === 'cancelled') {
+    const steps = buildTimelineSteps(order);
+    return `
+      <div class="progress-tracker">
+        ${steps.map((s) => `
+          <div class="progress-step ${s.state === 'cancelled' ? 'done cancelled' : 'done'}">
+            <div class="p-dot">${s.state === 'cancelled' ? '<i class="fas fa-times"></i>' : '<i class="fas fa-check"></i>'}</div>
+            <span class="p-label">${escapeHTML(s.label)}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  const steps = buildTimelineSteps(order);
+  return `
+    <div class="progress-tracker">
+      ${steps.map((s, i) => `
+        <div class="progress-step ${s.state === 'completed' ? 'done' : s.state === 'current' ? 'active' : ''}">
+          <div class="p-dot">${s.state === 'completed' ? '<i class="fas fa-check"></i>' : i + 1}</div>
+          <span class="p-label">${escapeHTML(s.label)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
 /* ============ ORDERS PAGE ============ */
 async function initOrdersPage() {
   const container = document.querySelector('.orders-list');
@@ -2350,25 +2483,8 @@ async function initOrdersPage() {
       return;
     }
 
-    const statusOrder = ['pending', 'confirmed', 'packed', 'delivered'];
-    const statusLabels = ['Pending', 'Confirmed', 'Packed', 'Delivered'];
-
     container.innerHTML = orders.map(order => {
-      const currentIdx = statusOrder.indexOf(order.status);
-      const isCancelled = order.status === 'cancelled';
-
-      const progress = isCancelled
-        ? `<div class="progress-tracker">
-             <div class="progress-step done"><div class="p-dot"><i class="fas fa-times"></i></div><span class="p-label">Cancelled</span></div>
-           </div>`
-        : `<div class="progress-tracker">
-             ${statusOrder.map((s, i) => `
-               <div class="progress-step ${i < currentIdx ? 'done' : i === currentIdx ? 'active' : ''}">
-                 <div class="p-dot">${i < currentIdx ? '<i class="fas fa-check"></i>' : i + 1}</div>
-                 <span class="p-label">${statusLabels[i]}</span>
-               </div>
-             `).join('')}
-           </div>`;
+      const progress = renderOrderProgressTracker(order);
 
       return `
         <div class="order-card">
@@ -2452,6 +2568,13 @@ async function initOrderConfirmationPage() {
 
     const payEl = document.querySelector('#confirm-order-details .confirm-detail:nth-child(4) span');
     if (payEl) payEl.textContent = (order.payment?.method || 'cod').toUpperCase();
+
+    // Tracking timeline — generated from the order's actual backend status
+    // and statusHistory (refreshes automatically whenever the page reloads).
+    const trackStatusEl = document.querySelector('#confirm-tracking-status');
+    if (trackStatusEl) trackStatusEl.innerHTML = getOrderBadge(order.status);
+    const timelineEl = document.querySelector('#confirm-timeline');
+    if (timelineEl) timelineEl.innerHTML = renderOrderTimeline(order);
 
     // Delivery info
     const nameEl = document.querySelector('#confirm-delivery .confirm-detail:nth-child(1) span');

@@ -954,7 +954,12 @@ async function listCustomerOrders(userId, { page, limit, skip }) {
     itemCount: o.items.reduce((sum, i) => sum + i.quantity, 0),
     total: o.pricing.total,
     status: o.status,
-    paymentStatus: o.payment.status
+    paymentStatus: o.payment.status,
+    // Already part of the customer's order record (returned by the order
+    // detail endpoint); exposed here too so the customer order page can
+    // render the tracking timeline (incl. cancelled lifecycle) from the
+    // list response without an extra request.
+    statusHistory: o.statusHistory
   }));
 
   return { orders: mapped, total };

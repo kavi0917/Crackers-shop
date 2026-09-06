@@ -1262,6 +1262,38 @@ input.pricing-selling[readonly] {
 }
 .progress-step:first-child::before { display: none; }
 .progress-step.done::before { background: var(--success); }
+.progress-step.cancelled .p-dot { background: var(--danger); color: var(--white); }
+.progress-step.cancelled .p-label { color: var(--danger); font-weight: 600; }
+
+/* ============ ORDER TRACKING TIMELINE (vertical) ============ */
+.order-timeline { display: flex; flex-direction: column; margin-top: var(--space-1); }
+.timeline-step { display: flex; gap: var(--space-3); position: relative; padding-bottom: var(--space-4); }
+.timeline-step:last-child { padding-bottom: 0; }
+.tl-marker { position: relative; flex-shrink: 0; }
+.tl-dot {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--white); border: 2px solid var(--border);
+  color: var(--text-muted); font-size: 0.8rem;
+  z-index: 2; transition: all 0.3s;
+}
+.tl-line {
+  position: absolute; top: 34px; left: 16px;
+  width: 2px; height: calc(100% - 34px + var(--space-4));
+  background: var(--border); z-index: 1;
+}
+.timeline-step:last-child .tl-line { display: none; }
+.timeline-step.completed .tl-dot { background: var(--success); border-color: var(--success); color: var(--white); }
+.timeline-step.completed .tl-line { background: var(--success); }
+.timeline-step.current .tl-dot { background: var(--grad-gold); border-color: var(--gold); color: var(--navy-900); box-shadow: var(--shadow-gold); }
+.timeline-step.pending .tl-dot { border-style: dashed; }
+.timeline-step.cancelled .tl-dot { background: var(--danger); border-color: var(--danger); color: var(--white); }
+.tl-content { padding-top: 4px; min-width: 0; }
+.tl-label { font-weight: 600; font-size: var(--fs-sm); color: var(--text-muted); }
+.timeline-step.completed .tl-label, .timeline-step.current .tl-label { color: var(--text-dark); }
+.timeline-step.cancelled .tl-label { color: var(--danger); font-weight: 700; }
+.tl-date { font-size: var(--fs-xs); color: var(--text-muted); }
+.timeline-step.current .tl-date { color: var(--warning); font-weight: 600; }
 
 /* ============ ABOUT ============ */
 .about-hero { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7); align-items: center; padding: var(--space-8) 0; }
