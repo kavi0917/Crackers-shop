@@ -251,6 +251,64 @@ async function apiRequest(endpoint, options = {}) {
   return data.data !== undefined ? data.data : data;
 }
 
+/* ---------- Binary Download Helper (e.g. invoice PDF) ---------- */
+async function apiDownload(endpoint, fallbackName = 'download.pdf', options = {}) {
+  const headers = { ...(options.headers || {}) };
+  const token = getToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  let response;
+  try {
+    const resolvedEndpoint = endpoint.startsWith('/')
+      ? API_BASE + endpoint
+      : new URL(endpoint, API_BASE).toString();
+    const requestUrl = new URL(resolvedEndpoint);
+    if (!_ALLOWED_API_ORIGINS.includes(requestUrl.origin)) {
+      throw new Error('Request blocked: origin not allowed.');
+    }
+    response = await fetch(requestUrl.toString(), { ...options, headers });
+  } catch (err) {
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+
+  // 401 — expired/invalid token: same session-expiry behavior as apiRequest.
+  if (response.status === 401) {
+    clearTokens();
+    if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('register.html')) {
+      const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+      const loginUrl = new URL('login.html', window.location.origin);
+      loginUrl.searchParams.set('redirect', redirect);
+      window.location.replace(loginUrl.toString());
+    }
+  }
+
+  if (!response.ok) {
+    let message = `Request failed (${response.status})`;
+    try {
+      const data = await response.json();
+      if (data && data.message) message = friendlyError(new Error(data.message));
+    } catch (e) { /* non-JSON error body */ }
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const disposition = response.headers.get('Content-Disposition') || '';
+  const match = disposition.match(/filename="?([^";]+)"?/);
+  const filename = (match && match[1]) || fallbackName;
+
+  // Trigger a browser download without navigating away from the page.
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+
+  return { filename, size: blob.size };
+}
+
 /* ---------- Auth API ---------- */
 const AuthAPI = {
   register: (data) => apiRequest('/auth/register', { method: 'POST', body: data }),
@@ -294,6 +352,7 @@ const CustomerAPI = {
     return apiRequest(`/orders${qs ? `?${qs}` : ''}`);
   },
   order: (id) => apiRequest(`/orders/${id}`),
+  invoice: (id) => apiDownload(`/orders/${id}/invoice`, `vendhan-crackers-invoice-${id}.pdf`),
   trackOrder: (id) => apiRequest(`/orders/${id}/track`),
   cancelOrder: (id) => apiRequest(`/orders/${id}/cancel`, { method: 'POST' }),
   addComboToCart: (comboId, items) => apiRequest(`/combos/${comboId}/add-to-cart`, { method: 'POST', body: { items } }),

@@ -2457,6 +2457,32 @@ function renderOrderProgressTracker(order) {
   `;
 }
 
+/* ============ INVOICE DOWNLOAD (Phase 4) ============ */
+async function downloadOrderInvoice(orderId, btn, orderCode) {
+  // Check authentication using the existing mechanism.
+  if (!isLoggedIn()) {
+    window.location.href = `login.html?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+  }
+  try {
+    const result = await CustomerAPI.invoice(orderId);
+    const filename = (result && result.filename) || `vendhan-crackers-invoice-${orderCode || orderId}.pdf`;
+    showToast('Invoice downloaded', `${filename} saved to your downloads.`, 'success');
+  } catch (e) {
+    showToast('Download failed', safeError(e), 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-file-invoice"></i> Download Invoice';
+    }
+  }
+}
+
 /* ============ ORDERS PAGE ============ */
 async function initOrdersPage() {
   const container = document.querySelector('.orders-list');
@@ -2503,6 +2529,7 @@ async function initOrdersPage() {
           ${progress}
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <a href="order-confirmation.html?order=${order.id}" class="btn btn-outline-dark btn-sm"><i class="fas fa-eye"></i> View Details</a>
+            <button class="btn btn-outline-dark btn-sm" data-download-invoice="${order.id}" data-order-code="${order.orderId}"><i class="fas fa-file-invoice"></i> Download Invoice</button>
             ${(order.status === 'pending' || order.status === 'confirmed') ? `
               <button class="btn btn-danger btn-sm" data-cancel-order="${order.id}"><i class="fas fa-times"></i> Cancel Order</button>
             ` : ''}
@@ -2531,6 +2558,14 @@ async function initOrdersPage() {
       });
     });
 
+    // Invoice download handlers
+    container.querySelectorAll('[data-download-invoice]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        downloadOrderInvoice(btn.dataset.downloadInvoice, btn, btn.dataset.orderCode || '');
+      });
+    });
+
   } catch (e) {
     container.innerHTML = `
       <div class="empty-state">
@@ -2555,6 +2590,12 @@ async function initOrderConfirmationPage() {
 
   try {
     const { order } = await CustomerAPI.order(orderId);
+
+    // Invoice download — reuses the existing auth + shared helper (Phase 4).
+    const invoiceBtn = document.getElementById('confirm-download-invoice');
+    if (invoiceBtn) {
+      invoiceBtn.addEventListener('click', () => downloadOrderInvoice(order._id || orderId, invoiceBtn, order.orderId || ''));
+    }
 
     // Order details
     const orderIdEl = document.querySelector('#confirm-order-details .confirm-detail:nth-child(1) span');

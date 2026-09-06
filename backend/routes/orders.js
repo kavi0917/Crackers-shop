@@ -19,6 +19,9 @@ router.get('/', orderController.listMyOrders);
 /* GET /api/orders/:id/track — must be defined before /:id */
 router.get('/:id/track', validateOrderId, validateResult, orderController.trackOrder);
 
+/* GET /api/orders/:id/invoice — must be defined before /:id */
+router.get('/:id/invoice', validateOrderId, validateResult, orderController.downloadInvoice);
+
 /* GET /api/orders/:id */
 router.get('/:id', validateOrderId, validateResult, orderController.getOrder);
 

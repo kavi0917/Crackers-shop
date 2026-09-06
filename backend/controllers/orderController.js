@@ -3,6 +3,7 @@
    ============================================================ */
 
 const checkoutService = require('../services/checkoutService');
+const invoiceService = require('../services/invoiceService');
 const asyncHandler = require('../utils/asyncHandler');
 const { paginate, paginationMeta } = require('../utils/paginate');
 
@@ -54,6 +55,26 @@ const trackOrder = asyncHandler(async (req, res) => {
 });
 
 /**
+ * GET /api/orders/:id/invoice
+ * Generate a downloadable PDF invoice for the authenticated customer's own
+ * order. Security: ownership is enforced by checkoutService.getCustomerOrder
+ * (Order.findOne({ _id, user: req.user._id })) — a customer can never invoice
+ * another customer's order. The PDF is built ONLY from stored order values;
+ * no pricing is recalculated.
+ */
+const downloadInvoice = asyncHandler(async (req, res) => {
+  const order = await checkoutService.getCustomerOrder(req.user._id, req.params.id);
+
+  const pdfBuffer = await invoiceService.generateInvoicePdf(order);
+
+  const filename = `vendhan-crackers-invoice-${order.orderId || req.params.id}.pdf`;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Content-Length', pdfBuffer.length);
+  res.send(pdfBuffer);
+});
+
+/**
  * POST /api/orders/:id/cancel
  * Cancel an order and restore stock.
  */
@@ -71,5 +92,6 @@ module.exports = {
   listMyOrders,
   getOrder,
   trackOrder,
-  cancelOrder
+  cancelOrder,
+  downloadInvoice
 };
