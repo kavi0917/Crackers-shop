@@ -154,6 +154,9 @@ function friendlyError(err) {
     .replace(/^Contact message not found/i, 'Message not found.')
     .replace(/^Cart not found/i, 'Your cart could not be found.')
     .replace(/^Cart item not found/i, 'This item is no longer in your cart.')
+    .replace(/^Product already in wishlist/i, 'This product is already in your wishlist.')
+    .replace(/^Item not found in wishlist/i, 'This item is no longer in your wishlist.')
+
     .replace(/^Product is out of stock/i, 'Sorry, this product is out of stock.')
     .replace(/^Product is inactive/i, 'Sorry, this product is currently unavailable.')
     .replace(/^Category has products/i, 'This category has products and cannot be deleted.')
@@ -296,7 +299,10 @@ const CustomerAPI = {
   addComboToCart: (comboId, items) => apiRequest(`/combos/${comboId}/add-to-cart`, { method: 'POST', body: { items } }),
   createReview: (productId, data) => apiRequest(`/products/${productId}/reviews`, { method: 'POST', body: data }),
   updateReview: (reviewId, data) => apiRequest(`/reviews/${reviewId}`, { method: 'PUT', body: data }),
-  deleteReview: (reviewId) => apiRequest(`/reviews/${reviewId}`, { method: 'DELETE' })
+  deleteReview: (reviewId) => apiRequest(`/reviews/${reviewId}`, { method: 'DELETE' }),
+  getWishlist: () => apiRequest('/wishlist'),
+  addToWishlist: (productId) => apiRequest('/wishlist', { method: 'POST', body: { productId } }),
+  removeFromWishlist: (productId) => apiRequest(`/wishlist/${productId}`, { method: 'DELETE' })
 };
 
 /* ---------- Referral / Reseller API (Phase 8) ---------- */
@@ -659,8 +665,11 @@ function productCardTemplate(p) {
   // Wishlist button
   const wishBtn = document.createElement('button');
   wishBtn.className = 'wishlist-btn';
+  wishBtn.dataset.productId = String(id);
+  wishBtn.dataset.productName = name;
   wishBtn.title = 'Add to wishlist';
   wishBtn.setAttribute('aria-label', 'Add ' + name + ' to wishlist');
+  wishBtn.setAttribute('aria-pressed', 'false');
   const heartIcon = document.createElement('i');
   heartIcon.className = 'fas fa-heart';
   wishBtn.appendChild(heartIcon);
@@ -783,6 +792,74 @@ async function syncCartCount() {
   } catch (e) {
     // Silent fail
   }
+}
+
+/* ---------- Wishlist State (single shared fetch) ----------
+   The whole page shares ONE wishlist API request. Product cards and the
+   Product Details heart read from this cached set of product ids, so we
+   never fire a wishlist request per card. Add/remove update the cache in
+   place; the cache is refreshed on the next render cycle. */
+let _wishlistState = null;    // Set of wishlisted product ids (strings)
+let _wishlistPromise = null;  // in-flight shared fetch
+
+async function loadWishlistState() {
+  if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+    _wishlistState = new Set();
+    return _wishlistState;
+  }
+  if (_wishlistState) return _wishlistState;
+  if (!_wishlistPromise) {
+    _wishlistPromise = CustomerAPI.getWishlist()
+      .then((data) => {
+        _wishlistState = new Set(
+          (data && data.items ? data.items : [])
+            .map((it) => String(it.productId))
+            .filter(Boolean)
+        );
+        return _wishlistState;
+      })
+      .catch(() => {
+        _wishlistState = new Set();
+        return _wishlistState;
+      })
+      .finally(() => {
+        _wishlistPromise = null;
+      });
+  }
+  return _wishlistPromise;
+}
+
+function isWishlisted(productId) {
+  return !!_wishlistState && _wishlistState.has(String(productId));
+}
+
+function updateWishlistState(productId, add) {
+  if (!_wishlistState) _wishlistState = new Set();
+  const key = String(productId);
+  if (add) _wishlistState.add(key);
+  else _wishlistState.delete(key);
+}
+
+/* Apply the cached wishlist state to every heart on the page
+   (.wishlist-btn on shop cards, .pd-wishlist on Product Details). */
+async function syncWishlistButtons() {
+  const buttons = document.querySelectorAll('.wishlist-btn[data-product-id], .pd-wishlist[data-product-id]');
+  if (buttons.length === 0) return;
+  let state;
+  try {
+    state = await loadWishlistState();
+  } catch (e) {
+    return;
+  }
+  buttons.forEach((btn) => {
+    const id = btn.dataset.productId;
+    if (!id) return;
+    const active = state.has(String(id));
+    btn.classList.toggle('active', active);
+    btn.title = active ? 'Remove from wishlist' : 'Add to wishlist';
+    btn.setAttribute('aria-pressed', String(active));
+    btn.setAttribute('aria-label', (active ? 'Remove ' : 'Add ') + (btn.dataset.productName || 'product') + (active ? ' from wishlist' : ' to wishlist'));
+  });
 }
 
 /* ---------- Logout ---------- */

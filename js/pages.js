@@ -253,6 +253,8 @@ async function initHomePage() {
     if (featuredGrid) {
       if (data.featuredProducts && data.featuredProducts.length > 0) {
         renderProductCards(featuredGrid, data.featuredProducts);
+        // One shared wishlist request marks every featured card's heart state.
+        if (typeof syncWishlistButtons === 'function') syncWishlistButtons();
       } else {
         featuredGrid.innerHTML = emptyState('No featured products yet', 'Check back soon for our latest collection.');
       }
@@ -776,6 +778,8 @@ async function initShopPage() {
         grid.appendChild(empty);
       } else {
         renderProductCards(grid, data.products);
+        // One shared wishlist request marks every card's heart state.
+        if (typeof syncWishlistButtons === 'function') syncWishlistButtons();
       }
 
       // Pagination
@@ -1091,6 +1095,14 @@ async function initProductDetailsPage() {
       addBtn.dataset.img = p.mainImage || '';
     }
 
+    // Wishlist heart — uses the shared single wishlist state fetch.
+    const wishBtnEl = document.querySelector('.pd-wishlist');
+    if (wishBtnEl) {
+      wishBtnEl.dataset.productId = String(p.id);
+      wishBtnEl.dataset.productName = p.name;
+    }
+    if (typeof syncWishlistButtons === 'function') syncWishlistButtons();
+
     // Expose available stock to the editable quantity selector so both manual
     // typing and the +/− buttons respect the real product stock limit.
     const qtySelectorEl = document.querySelector('.pd-actions .qty-selector');
@@ -1174,6 +1186,8 @@ async function initProductDetailsPage() {
         }
         if (products.length > 0) {
           renderProductCards(relatedGrid, products);
+          // Related cards carry wishlist hearts too — same shared one-request state.
+          if (typeof syncWishlistButtons === 'function') syncWishlistButtons();
         } else {
           const noRelated = document.createElement('p');
           noRelated.style.color = 'var(--text-muted)';
@@ -1707,6 +1721,249 @@ async function autoPopulateCheckoutCustomer(form) {
   fillIfEmpty(nameInput, user.name);
   fillIfEmpty(phoneInput, user.phone);
   fillIfEmpty(emailInput, user.email);
+}
+
+/* ============ WISHLIST PAGE ============ */
+async function initWishlistPage() {
+  const container = document.querySelector('.wishlist-items');
+  if (!container) return;
+
+  // Wishlist requires an authenticated customer.
+  if (typeof isLoggedIn !== 'function' || !isLoggedIn()) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-heart"></i></div>
+        <h3>Login required</h3>
+        <p>Please login to view and manage your wishlist.</p>
+        <a href="login.html?redirect=wishlist.html" class="btn btn-primary">Login</a>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div>
+      <h3>Loading your wishlist...</h3>
+    </div>
+  `;
+
+  let data = null;
+  try {
+    data = await CustomerAPI.getWishlist();
+  } catch (err) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-exclamation-circle"></i></div>
+        <h3>Could not load your wishlist</h3>
+        <p>${escapeHTML(typeof safeError === 'function' ? safeError(err) : 'Something went wrong. Please try again.')}</p>
+        <button type="button" class="btn btn-primary" onclick="location.reload()">Try Again</button>
+      </div>
+    `;
+    return;
+  }
+
+  const items = (data && data.items) || [];
+
+  if (items.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-heart"></i></div>
+        <h3>Your wishlist is empty</h3>
+        <p>Save products you love and pick them up later.</p>
+        <a href="shop.html" class="btn btn-primary">Start Shopping</a>
+      </div>
+    `;
+    return;
+  }
+
+  const countEl = document.querySelector('[data-wishlist-count]');
+  if (countEl) countEl.textContent = items.length === 1 ? '1 saved product' : items.length + ' saved products';
+
+  container.textContent = '';
+
+  await renderWishlistItems(container, items);
+}
+
+/* Render the wishlist rows once fetched (current product data only). */
+async function renderWishlistItems(container, items) {
+  items.forEach((item, idx) => {
+    const row = document.createElement('div');
+    row.className = 'cart-item wishlist-item';
+    row.dataset.wishlistKey = String(item._id || idx);
+
+    const isDeleted = !!item.deleted || !item.product;
+    const product = item.product || {};
+    const prodId = item.productId || product.id || product._id;
+    const name = isDeleted ? 'Unavailable product' : (product.name || '');
+    const detailsUrl = prodId ? 'product-details.html?id=' + encodeURIComponent(prodId) : 'shop.html';
+    const img = product.images && product.images.length > 0 ? safeImg(product.images[0]) : '';
+    const price = product.finalPrice !== undefined && product.finalPrice !== null ? Number(product.finalPrice) : Number(product.price || 0);
+    const originalPrice = Number(product.originalPrice || 0);
+    const discountPercent = Number(product.discountPercent !== undefined ? product.discountPercent : (product.discount || 0));
+    const hasRealDiscount = discountPercent > 0 && originalPrice > 0 && price < originalPrice;
+    const stockStatus = product.stockStatus || (isDeleted ? 'out_of_stock' : (product.stock === 0 ? 'out_of_stock' : product.stock <= (product.reorderLevel || 0) ? 'low_stock' : 'in_stock'));
+
+    // Image (links to the product when still available)
+    const imgDiv = document.createElement('div');
+    imgDiv.className = 'cart-item-img';
+    const imgEl = document.createElement('img');
+    imgEl.src = img || 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#fdf9f0"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-size="40">🎆</text></svg>'
+    );
+    imgEl.alt = isDeleted ? 'Unavailable product' : name;
+    imgEl.loading = 'lazy';
+    if (prodId) {
+      const imgLink = document.createElement('a');
+      imgLink.href = detailsUrl;
+      imgLink.appendChild(imgEl);
+      imgDiv.appendChild(imgLink);
+    } else {
+      imgDiv.appendChild(imgEl);
+    }
+    row.appendChild(imgDiv);
+
+    // Info
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'cart-item-info';
+    const nameEl = document.createElement('h4');
+    if (prodId) {
+      const nameLink = document.createElement('a');
+      nameLink.href = detailsUrl;
+      nameLink.textContent = name;
+      nameLink.style.color = 'inherit';
+      nameEl.appendChild(nameLink);
+    } else {
+      nameEl.textContent = name;
+    }
+    infoDiv.appendChild(nameEl);
+
+    const catDiv = document.createElement('div');
+    catDiv.className = 'cart-cat';
+    catDiv.textContent = (product.category && product.category.name) || (isDeleted ? 'Product unavailable' : 'Festival Crackers');
+    infoDiv.appendChild(catDiv);
+
+    if (!isDeleted && price > 0) {
+      const priceDiv = document.createElement('div');
+      priceDiv.className = 'cart-price';
+      const nowSpan = document.createElement('span');
+      nowSpan.className = 'price-now';
+      nowSpan.style.fontSize = 'var(--fs-md)';
+      nowSpan.textContent = formatINR(price);
+      priceDiv.appendChild(nowSpan);
+      if (hasRealDiscount) {
+        const oldSpan = document.createElement('span');
+        oldSpan.className = 'price-old';
+        oldSpan.textContent = formatINR(originalPrice);
+        priceDiv.appendChild(oldSpan);
+        const offSpan = document.createElement('span');
+        offSpan.className = 'price-off';
+        offSpan.textContent = 'Save ' + Math.round(discountPercent) + '%';
+        priceDiv.appendChild(offSpan);
+      }
+      infoDiv.appendChild(priceDiv);
+    } else if (!isDeleted) {
+      const priceDiv = document.createElement('div');
+      priceDiv.className = 'cart-price';
+      priceDiv.textContent = 'Price on request';
+      infoDiv.appendChild(priceDiv);
+    }
+
+    // Availability (current product state; never stale)
+    const stockDiv = document.createElement('div');
+    stockDiv.className = 'product-stock';
+    stockDiv.style.marginTop = 'var(--space-1)';
+    stockDiv.style.marginBottom = '0';
+    if (isDeleted || product.status !== 'active') {
+      const badge = document.createElement('span');
+      badge.className = 'badge badge-out';
+      badge.textContent = isDeleted ? 'Unavailable' : 'Currently Unavailable';
+      stockDiv.appendChild(badge);
+    } else {
+      const dot = document.createElement('span');
+      if (stockStatus === 'in_stock') dot.className = 'dot dot-green';
+      else if (stockStatus === 'low_stock') dot.className = 'dot dot-orange';
+      else dot.className = 'dot dot-red';
+      stockDiv.appendChild(dot);
+      stockDiv.appendChild(document.createTextNode(' ' + getStockLabel(stockStatus) + (product.stock !== undefined ? ' — ' + product.stock + ' available' : '')));
+    }
+    infoDiv.appendChild(stockDiv);
+    row.appendChild(infoDiv);
+
+    // Actions
+    const rightDiv = document.createElement('div');
+    rightDiv.className = 'cart-item-right wishlist-actions';
+
+    if (!isDeleted) {
+      const viewBtn = document.createElement('a');
+      viewBtn.href = detailsUrl;
+      viewBtn.className = 'btn btn-outline-dark btn-sm';
+      const viewIcon = document.createElement('i');
+      viewIcon.className = 'fas fa-eye';
+      viewBtn.appendChild(viewIcon);
+      viewBtn.appendChild(document.createTextNode(' View Product'));
+      rightDiv.appendChild(viewBtn);
+
+      const canAdd = product.status === 'active' && stockStatus !== 'out_of_stock';
+      if (canAdd) {
+        const addBtn = document.createElement('button');
+        addBtn.className = 'btn btn-primary btn-sm';
+        addBtn.setAttribute('data-add-to-cart', '');
+        addBtn.dataset.id = String(prodId);
+        addBtn.dataset.name = name;
+        addBtn.dataset.price = String(price);
+        addBtn.dataset.img = img;
+        const cartIcon = document.createElement('i');
+        cartIcon.className = 'fas fa-cart-plus';
+        addBtn.appendChild(cartIcon);
+        addBtn.appendChild(document.createTextNode(' Add to Cart'));
+        rightDiv.appendChild(addBtn);
+      } else {
+        const disabledBtn = document.createElement('button');
+        disabledBtn.className = 'btn btn-dark btn-sm';
+        disabledBtn.disabled = true;
+        const bellIcon = document.createElement('i');
+        bellIcon.className = 'fas fa-bell';
+        disabledBtn.appendChild(bellIcon);
+        disabledBtn.appendChild(document.createTextNode(stockStatus === 'out_of_stock' ? ' Out of Stock' : ' Unavailable'));
+        rightDiv.appendChild(disabledBtn);
+      }
+    }
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-btn';
+    removeBtn.type = 'button';
+    removeBtn.dataset.wishlistRemove = String(prodId || item.productId || '');
+    const removeIcon = document.createElement('i');
+    removeIcon.className = 'fas fa-trash-alt';
+    removeBtn.appendChild(removeIcon);
+    removeBtn.appendChild(document.createTextNode(' Remove'));
+    rightDiv.appendChild(removeBtn);
+
+    row.appendChild(rightDiv);
+    container.appendChild(row);
+  });
+
+  // Remove handler — re-scoped to the authenticated user via the API.
+  container.querySelectorAll('[data-wishlist-remove]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const productId = btn.dataset.wishlistRemove;
+      if (!productId) return;
+      if (btn.dataset.pending === '1') return;
+      btn.dataset.pending = '1';
+      btn.disabled = true;
+      try {
+        await CustomerAPI.removeFromWishlist(productId);
+        if (typeof updateWishlistState === 'function') updateWishlistState(productId, false);
+        showToast('Removed from wishlist', 'Removed from your wishlist.', 'warning');
+        initWishlistPage();
+      } catch (err) {
+        showToast('Wishlist', safeError(err), 'error');
+        btn.dataset.pending = '';
+        btn.disabled = false;
+      }
+    });
+  });
 }
 
 async function initCheckoutPageAPI() {
@@ -5256,6 +5513,9 @@ document.addEventListener('DOMContentLoaded', () => {
       break;
     case 'cart.html':
       initCartPageAPI();
+      break;
+    case 'wishlist.html':
+      initWishlistPage();
       break;
     case 'checkout.html':
       initCheckoutPageAPI();

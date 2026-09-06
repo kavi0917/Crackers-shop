@@ -124,6 +124,9 @@ app.use('/api/admin/products', require('./routes/adminProducts'));
 // Phase 4 — Cart
 app.use('/api/cart', require('./routes/cart'));
 
+// Phase 2 — Customer Wishlist
+app.use('/api/wishlist', require('./routes/wishlist'));
+
 // Phase 5 — Checkout + Orders
 app.use('/api/checkout', require('./routes/checkout'));
 app.use('/api/orders', require('./routes/orders'));

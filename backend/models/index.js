@@ -14,6 +14,7 @@ const Combo = require('./Combo');
 const Setting = require('./Setting');
 const InventoryTransaction = require('./InventoryTransaction');
 const Commission = require('./Commission');
+const Wishlist = require('./Wishlist');
 
 module.exports = {
   User,
@@ -27,5 +28,6 @@ module.exports = {
   Combo,
   Setting,
   InventoryTransaction,
-  Commission
+  Commission,
+  Wishlist
 };

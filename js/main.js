@@ -129,6 +129,13 @@ function updateNavbarAuth() {
       ordersLink.appendChild(ordersIcon);
       ordersLink.appendChild(document.createTextNode(' My Orders'));
 
+      const wishlistLink = document.createElement('a');
+      wishlistLink.href = 'wishlist.html';
+      const wishlistIcon = document.createElement('i');
+      wishlistIcon.className = 'fas fa-heart';
+      wishlistLink.appendChild(wishlistIcon);
+      wishlistLink.appendChild(document.createTextNode(' Wishlist'));
+
       const logoutBtn = document.createElement('button');
       logoutBtn.className = 'dropdown-logout';
       const logoutIcon = document.createElement('i');
@@ -141,6 +148,7 @@ function updateNavbarAuth() {
 
       dropdown.appendChild(profileLink);
       dropdown.appendChild(ordersLink);
+      dropdown.appendChild(wishlistLink);
       dropdown.appendChild(logoutBtn);
       wrap.appendChild(btn);
       wrap.appendChild(dropdown);
@@ -166,7 +174,7 @@ function updateNavbarAuth() {
       mobileLogin.appendChild(document.createTextNode(' ' + name));
       mobileLogin.href = 'profile.html';
 
-      // Inject My Orders + Logout after the login link if not already present
+      // Inject My Orders + Wishlist + Logout after the login link if not already present
       if (!mobileLogin.parentElement.querySelector('.mobile-orders-link')) {
         const mOrders = document.createElement('a');
         mOrders.href = 'orders.html';
@@ -175,6 +183,14 @@ function updateNavbarAuth() {
         oIcon.className = 'fas fa-box-open';
         mOrders.appendChild(oIcon);
         mOrders.appendChild(document.createTextNode(' My Orders'));
+
+        const mWishlist = document.createElement('a');
+        mWishlist.href = 'wishlist.html';
+        mWishlist.className = 'mobile-wishlist-link';
+        const wIcon = document.createElement('i');
+        wIcon.className = 'fas fa-heart';
+        mWishlist.appendChild(wIcon);
+        mWishlist.appendChild(document.createTextNode(' Wishlist'));
 
         const mLogout = document.createElement('a');
         mLogout.href = '#';
@@ -189,7 +205,8 @@ function updateNavbarAuth() {
         });
 
         mobileLogin.after(mOrders);
-        mOrders.after(mLogout);
+        mOrders.after(mWishlist);
+        mWishlist.after(mLogout);
       }
     }
   } else {
@@ -357,18 +374,72 @@ function initFilterToggle() {
   }
 }
 
-/* ---------- Wishlist ---------- */
+/* ---------- Wishlist ----------
+   API-backed wishlist hearts for the whole page.
+   - Delegated listener: product cards are rendered dynamically (Shop,
+     Home, Related), so one document-level handler covers every heart.
+   - Guests are redirected to login using the project's existing auth
+     behaviour (same pattern as Add to Cart / Buy Now).
+   - Pending state prevents duplicate/rapid add-remove requests per heart.
+   - UI updates immediately after the API response; no page navigation. */
 function initWishlist() {
-  document.querySelectorAll('.wishlist-btn, .pd-wishlist').forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('active');
-      const isActive = btn.classList.contains('active');
-      showToast(
-        isActive ? 'Added to wishlist' : 'Removed from wishlist',
-        isActive ? 'Saved for later.' : 'Removed from your wishlist.',
-        isActive ? 'success' : 'warning'
-      );
-    });
+  if (typeof document === 'undefined') return;
+
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.wishlist-btn, .pd-wishlist');
+    if (!btn) return;
+
+    // Never navigate away (the shop heart sits inside the media <a> link)
+    e.preventDefault();
+    e.stopPropagation();
+
+    const id = btn.dataset.productId;
+    if (!id) return;
+
+    // Guest → existing login-redirect behaviour
+    if (typeof isLoggedIn !== 'function' || !isLoggedIn()) {
+      if (typeof showToast === 'function') {
+        showToast('Login required', 'Please login to save items to your wishlist.', 'warning');
+      }
+      const current = window.location.pathname.split('/').pop() + window.location.search;
+      window.location.href = 'login.html?redirect=' + encodeURIComponent(current);
+      return;
+    }
+
+    if (typeof CustomerAPI === 'undefined') return;
+    if (btn.dataset.wishlistPending === '1') return; // prevent rapid repeated requests
+
+    const isActive = btn.classList.contains('active');
+    const productName = btn.dataset.productName || 'Product';
+
+    btn.dataset.wishlistPending = '1';
+    btn.disabled = true;
+    try {
+      if (isActive) {
+        await CustomerAPI.removeFromWishlist(id);
+        btn.classList.remove('active');
+        if (typeof updateWishlistState === 'function') updateWishlistState(id, false);
+        if (typeof showToast === 'function') {
+          showToast('Removed from wishlist', productName + ' removed from your wishlist.', 'warning');
+        }
+      } else {
+        await CustomerAPI.addToWishlist(id);
+        btn.classList.add('active');
+        if (typeof updateWishlistState === 'function') updateWishlistState(id, true);
+        if (typeof showToast === 'function') {
+          showToast('Added to wishlist', productName + ' saved to your wishlist.', 'success');
+        }
+      }
+      btn.title = isActive ? 'Add to wishlist' : 'Remove from wishlist';
+      btn.setAttribute('aria-pressed', String(!isActive));
+    } catch (err) {
+      if (typeof showToast === 'function') {
+        showToast('Wishlist', typeof safeError === 'function' ? safeError(err) : (err && err.message ? err.message : 'Something went wrong.'), 'error');
+      }
+    } finally {
+      btn.dataset.wishlistPending = '';
+      btn.disabled = false;
+    }
   });
 }
 
